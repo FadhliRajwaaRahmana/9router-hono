@@ -20184,7 +20184,7 @@ var init_package = __esm({
   "package.json"() {
     package_default = {
       name: "9router-hono",
-      version: "0.2.3",
+      version: "0.2.4",
       description: "Ultra-fast headless Hono proxy engine for 9Router",
       type: "module",
       main: "dist/server.js",
@@ -52806,7 +52806,7 @@ var dashboard_default = `<!DOCTYPE html>
   <title>9Router Hono \u2014 Control Plane</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -52816,27 +52816,40 @@ var dashboard_default = `<!DOCTYPE html>
       theme: {
         extend: {
           fontFamily: {
-            sans: ['"Inter"', 'sans-serif'],
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
             mono: ['"JetBrains Mono"', 'monospace'],
           },
           colors: {
             brand: {
-              50: '#ecfeff',
-              100: '#cffafe',
-              400: '#22d3ee',
-              500: '#06b6d4',
-              600: '#0891b2',
-              700: '#0e7490',
+              50: '#fdf1ed',
+              100: '#fadccf',
+              200: '#f4b59c',
+              300: '#ee8d6a',
+              400: '#ea7855',
+              500: '#E56A4A',
+              600: '#cc5236',
+              700: '#a64027',
+              800: '#7a2f1d',
+              900: '#4d1e12',
+            },
+            surface: {
+              DEFAULT: '#262626',
+              alt: '#1F1F1E',
+              2: '#303030',
+              3: '#3a3a3a',
             },
             bg: {
-              DEFAULT: '#09090b',
-              subtle: '#121215',
-              card: '#18181b',
-              elevated: '#27272a',
+              DEFAULT: '#1a1a1a',
+              alt: '#1F1F1E',
             },
             border: {
-              subtle: 'rgba(255, 255, 255, 0.08)',
-              hover: 'rgba(6, 182, 212, 0.4)',
+              DEFAULT: '#333333',
+              subtle: '#2a2a2a',
+            },
+            text: {
+              main: '#ededed',
+              muted: '#9ca3af',
+              subtle: '#6b7280',
             }
           }
         }
@@ -52844,301 +52857,271 @@ var dashboard_default = `<!DOCTYPE html>
     };
   </script>
   <style>
+    :root {
+      color-scheme: dark;
+    }
     body {
-      background-color: #09090b;
-      color: #f4f4f5;
+      background-color: #1a1a1a;
+      color: #ededed;
     }
     .material-symbols-outlined {
-      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 22;
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
       vertical-align: middle;
     }
     .custom-scrollbar::-webkit-scrollbar {
-      width: 5px;
-      height: 5px;
+      width: 6px;
+      height: 6px;
     }
     .custom-scrollbar::-webkit-scrollbar-track {
       background: transparent;
     }
     .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.12);
+      background: #333333;
       border-radius: 9999px;
     }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-      background: rgba(6, 182, 212, 0.5);
+      background: #E56A4A;
     }
     .landing-grid {
       background-size: 32px 32px;
-      background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-                        linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-image: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                        linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
     }
-    .nav-item.active {
-      background: rgba(6, 182, 212, 0.12);
-      color: #22d3ee;
-      border-left: 3px solid #06b6d4;
+    .nav-link.active {
+      background: rgba(229, 106, 74, 0.12);
+      color: #E56A4A;
     }
-    @keyframes pulse-subms {
-      0%, 100% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.2); opacity: 0.6; }
-    }
-    .animate-subms {
-      animation: pulse-subms 2s infinite ease-in-out;
+    .nav-link.active .material-symbols-outlined {
+      font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 20;
+      color: #E56A4A;
     }
   </style>
 </head>
-<body class="flex h-screen w-full overflow-hidden antialiased selection:bg-brand-500 selection:text-black">
+<body class="flex h-screen w-full overflow-hidden antialiased selection:bg-brand-500 selection:text-white">
 
-  <!-- Mobile Sidebar Backdrop Overlay -->
-  <div id="sidebar-overlay" onclick="toggleSidebar(false)" class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden hidden transition-opacity duration-300"></div>
+  <!-- Mobile Drawer Overlay -->
+  <div id="drawer-overlay" onclick="toggleSidebar(false)" class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden hidden transition-opacity duration-200"></div>
 
-  <!-- Left Sidebar (Aligned with 9Router-fix style) -->
-  <aside id="main-sidebar" class="fixed lg:static inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border-subtle bg-bg-subtle backdrop-blur-xl transition-transform duration-300 -translate-x-full lg:translate-x-0">
+  <!-- Left Sidebar (Pixel-aligned with 9Router-fix) -->
+  <aside id="app-sidebar" class="fixed lg:static inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-[#2a2a2a] bg-[#1E1E1E]/95 backdrop-blur-xl transition-transform duration-300 -translate-x-full lg:translate-x-0 min-h-full">
     
-    <!-- Mac-style Traffic lights & App header -->
-    <div class="px-5 pt-4 pb-3 border-b border-border-subtle">
-      <div class="flex items-center justify-between mb-3">
-        <div class="flex items-center gap-1.5">
-          <div class="w-3 h-3 rounded-full bg-[#FF5F56] shadow-sm"></div>
-          <div class="w-3 h-3 rounded-full bg-[#FFBD2E] shadow-sm"></div>
-          <div class="w-3 h-3 rounded-full bg-[#27C93F] shadow-sm"></div>
+    <!-- Traffic lights dots -->
+    <div class="flex items-center gap-2 px-6 pt-5 pb-2">
+      <div class="w-3 h-3 rounded-full bg-[#FF5F56]"></div>
+      <div class="w-3 h-3 rounded-full bg-[#FFBD2E]"></div>
+      <div class="w-3 h-3 rounded-full bg-[#27C93F]"></div>
+      <button onclick="toggleSidebar(false)" class="ml-auto lg:hidden text-text-muted hover:text-white p-1">
+        <span class="material-symbols-outlined text-[18px]">close</span>
+      </button>
+    </div>
+
+    <!-- 9Router Logo Brand (Warm Orange Gradient) -->
+    <div class="px-6 py-4 flex flex-col gap-2">
+      <a href="/dashboard" class="flex items-center gap-3">
+        <div class="flex items-center justify-center size-9 rounded-[10px] bg-gradient-to-br from-[#E56A4A] to-[#a64027] shadow-[0_2px_12px_-2px_rgba(229,106,74,0.35)]">
+          <span class="material-symbols-outlined text-white text-[20px]">hub</span>
         </div>
-        <button onclick="toggleSidebar(false)" class="lg:hidden text-gray-400 hover:text-white p-1">
-          <span class="material-symbols-outlined text-[18px]">close</span>
+        <div class="flex flex-col">
+          <div class="flex items-center gap-1.5">
+            <h1 class="text-base font-bold tracking-tight text-[#ededed]">9Router Hono</h1>
+            <span class="px-1.5 py-0.2 text-[9px] font-mono font-bold rounded bg-[#E56A4A]/20 text-[#ea7855]">v0.2.4</span>
+          </div>
+          <span class="text-xs text-[#9ca3af] font-mono flex items-center gap-1">
+            <span class="size-1.5 rounded-full bg-emerald-400"></span>
+            Hono Core (<span id="port-indicator">20129</span>)
+          </span>
+        </div>
+      </a>
+    </div>
+
+    <!-- Sidebar Navigation Menu -->
+    <nav class="flex-1 px-4 py-2 space-y-0.5 overflow-y-auto custom-scrollbar">
+      
+      <button onclick="navigate('endpoint')" id="nav-endpoint" class="nav-link active w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-text-muted hover:bg-surface-2 hover:text-text-main transition-all text-left">
+        <span class="material-symbols-outlined text-[18px]">api</span>
+        <span>Endpoint & Key</span>
+      </button>
+
+      <button onclick="navigate('providers')" id="nav-providers" class="nav-link w-full flex items-center justify-between px-3 py-2 rounded-lg text-[13px] font-medium text-text-muted hover:bg-surface-2 hover:text-text-main transition-all text-left">
+        <div class="flex items-center gap-3">
+          <span class="material-symbols-outlined text-[18px]">dns</span>
+          <span>Providers</span>
+        </div>
+        <span id="badge-accounts" class="px-2 py-0.5 text-[10px] font-mono rounded bg-surface-2 text-text-muted font-semibold">...</span>
+      </button>
+
+      <button onclick="navigate('combos')" id="nav-combos" class="nav-link w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-text-muted hover:bg-surface-2 hover:text-text-main transition-all text-left">
+        <span class="material-symbols-outlined text-[18px]">layers</span>
+        <span>Combo & Vision Adapter</span>
+      </button>
+
+      <button onclick="navigate('usage')" id="nav-usage" class="nav-link w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-text-muted hover:bg-surface-2 hover:text-text-main transition-all text-left">
+        <span class="material-symbols-outlined text-[18px]">bar_chart</span>
+        <span>Usage</span>
+      </button>
+
+      <button onclick="navigate('tokensaver')" id="nav-tokensaver" class="nav-link w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-text-muted hover:bg-surface-2 hover:text-text-main transition-all text-left">
+        <span class="material-symbols-outlined text-[18px]">savings</span>
+        <span>Token Saver</span>
+      </button>
+
+      <!-- System divider -->
+      <div class="pt-4 mt-2 space-y-0.5 border-t border-[#2a2a2a]">
+        <p class="px-3 text-xs font-semibold text-text-muted/60 uppercase tracking-wider mb-2 font-mono">
+          Developer & Diagnostics
+        </p>
+
+        <button onclick="navigate('playground')" id="nav-playground" class="nav-link w-full flex items-center justify-between px-3 py-2 rounded-lg text-[13px] font-medium text-text-muted hover:bg-surface-2 hover:text-text-main transition-all text-left">
+          <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-[18px]">terminal</span>
+            <span>Live Playground</span>
+          </div>
+          <span class="px-1.5 py-0.2 text-[9px] font-mono font-bold rounded bg-emerald-950 text-emerald-400 border border-emerald-800/40">FAST</span>
+        </button>
+
+        <button onclick="navigate('catalog')" id="nav-catalog" class="nav-link w-full flex items-center justify-between px-3 py-2 rounded-lg text-[13px] font-medium text-text-muted hover:bg-surface-2 hover:text-text-main transition-all text-left">
+          <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-[18px]">inventory_2</span>
+            <span>Model Catalog</span>
+          </div>
+          <span id="badge-models" class="px-2 py-0.5 text-[10px] font-mono rounded bg-surface-2 text-text-muted font-semibold">...</span>
+        </button>
+
+        <button onclick="navigate('logs')" id="nav-logs" class="nav-link w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-text-muted hover:bg-surface-2 hover:text-text-main transition-all text-left">
+          <span class="material-symbols-outlined text-[18px]">description</span>
+          <span>Console Log</span>
         </button>
       </div>
 
-      <div class="flex items-center gap-2.5">
-        <div class="flex items-center justify-center size-8 rounded-lg bg-gradient-to-br from-brand-500 to-cyan-700 shadow-md">
-          <span class="material-symbols-outlined text-black text-[20px] font-bold">bolt</span>
-        </div>
-        <div>
-          <div class="flex items-center gap-1.5">
-            <span class="font-bold text-sm text-white tracking-tight">9Router Hono</span>
-            <span class="px-1.5 py-0.5 text-[9px] font-mono font-bold rounded bg-cyan-950 text-cyan-400 border border-cyan-800/40">v0.2.2</span>
-          </div>
-          <span class="text-[11px] text-gray-400 font-mono flex items-center gap-1">
-            <span class="size-1.5 rounded-full bg-emerald-400 animate-subms"></span>
-            Hono Core (<span id="sidebar-port">20129</span>)
-          </span>
-        </div>
-      </div>
-    </div>
+    </nav>
 
-    <!-- Navigation Links -->
-    <div class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-6">
-      
-      <!-- Primary Section -->
-      <div>
-        <div class="px-3 mb-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400 font-mono">Routing & Telemetry</div>
-        <nav class="space-y-0.5">
-          <button onclick="navigate('usage')" id="nav-usage" class="nav-item active w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-gray-300 hover:bg-white/5 transition-all text-left">
-            <span class="material-symbols-outlined text-[18px]">bar_chart</span>
-            <span>Usage & Analytics</span>
-          </button>
-          <button onclick="navigate('providers')" id="nav-providers" class="nav-item w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-gray-300 hover:bg-white/5 transition-all text-left">
-            <div class="flex items-center gap-2.5">
-              <span class="material-symbols-outlined text-[18px]">dns</span>
-              <span>Providers & Accounts</span>
-            </div>
-            <span id="nav-badge-accounts" class="px-1.5 py-0.5 text-[10px] font-mono rounded bg-gray-800 text-gray-300 font-bold">...</span>
-          </button>
-          <button onclick="navigate('endpoint')" id="nav-endpoint" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-gray-300 hover:bg-white/5 transition-all text-left">
-            <span class="material-symbols-outlined text-[18px]">api</span>
-            <span>Endpoint & Keys</span>
-          </button>
-          <button onclick="navigate('combos')" id="nav-combos" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-gray-300 hover:bg-white/5 transition-all text-left">
-            <span class="material-symbols-outlined text-[18px]">layers</span>
-            <span>Combos & Adapters</span>
-          </button>
-          <button onclick="navigate('tokensaver')" id="nav-tokensaver" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-gray-300 hover:bg-white/5 transition-all text-left">
-            <span class="material-symbols-outlined text-[18px]">savings</span>
-            <span>Token Saver</span>
-          </button>
-        </nav>
-      </div>
-
-      <!-- Developer & Diagnostics Section -->
-      <div>
-        <div class="px-3 mb-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400 font-mono">Developer Tools</div>
-        <nav class="space-y-0.5">
-          <button onclick="navigate('playground')" id="nav-playground" class="nav-item w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-gray-300 hover:bg-white/5 transition-all text-left">
-            <div class="flex items-center gap-2.5">
-              <span class="material-symbols-outlined text-[18px]">terminal</span>
-              <span>Live Playground</span>
-            </div>
-            <span class="px-1.5 py-0.5 text-[9px] font-mono font-bold rounded bg-cyan-950 text-cyan-400">FAST</span>
-          </button>
-          <button onclick="navigate('catalog')" id="nav-catalog" class="nav-item w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-gray-300 hover:bg-white/5 transition-all text-left">
-            <div class="flex items-center gap-2.5">
-              <span class="material-symbols-outlined text-[18px]">inventory_2</span>
-              <span>Model Catalog</span>
-            </div>
-            <span id="nav-badge-models" class="px-1.5 py-0.5 text-[10px] font-mono rounded bg-gray-800 text-gray-300 font-bold">...</span>
-          </button>
-          <button onclick="navigate('logs')" id="nav-logs" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-gray-300 hover:bg-white/5 transition-all text-left">
-            <span class="material-symbols-outlined text-[18px]">description</span>
-            <span>Console Logs</span>
-          </button>
-        </nav>
-      </div>
-
-    </div>
-
-    <!-- Footer Local Storage indicator -->
-    <div class="p-3 border-t border-border-subtle bg-bg-card/50">
-      <div class="flex items-center justify-between text-xs text-gray-400 px-2 py-1">
+    <!-- Footer Local Mode (Matches 9Router style) -->
+    <div class="p-4 border-t border-[#2a2a2a] bg-[#1E1E1E]">
+      <div class="flex items-center justify-between text-xs text-text-muted mb-1">
         <div class="flex items-center gap-2">
-          <span class="size-2 rounded-full bg-emerald-400"></span>
-          <span class="font-medium text-[11px] text-gray-300">Local Mode</span>
+          <span class="size-2 rounded-full bg-emerald-500"></span>
+          <span class="font-medium text-text-main">Local Mode</span>
         </div>
-        <span class="text-[10px] font-mono text-cyan-400">SQLite Active</span>
+        <span class="text-[10px] font-mono text-[#E56A4A]">SQLite</span>
       </div>
-      <div class="px-2 text-[10px] text-gray-400 truncate font-mono mt-0.5">
+      <div class="text-[10px] text-text-subtle font-mono truncate">
         ~/.9router/db/data.sqlite
       </div>
     </div>
   </aside>
 
-  <!-- Main Content Wrapper -->
-  <div class="flex-1 flex flex-col min-w-0 h-full relative isolate">
+  <!-- Right App Container -->
+  <div class="flex flex-col flex-1 h-full min-w-0 relative isolate">
     <div class="landing-grid absolute inset-0 pointer-events-none -z-10" aria-hidden="true"></div>
 
-    <!-- Top Navigation Bar -->
-    <header class="h-14 border-b border-border-subtle bg-bg-subtle/80 backdrop-blur-md px-4 lg:px-8 flex items-center justify-between z-10">
+    <!-- Header bar -->
+    <header class="h-14 border-b border-[#2a2a2a] bg-[#1a1a1a]/80 backdrop-blur-md px-6 flex items-center justify-between z-10">
       <div class="flex items-center gap-3">
-        <button onclick="toggleSidebar(true)" class="lg:hidden p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5">
+        <button onclick="toggleSidebar(true)" class="lg:hidden p-1.5 rounded-lg text-text-muted hover:text-white hover:bg-surface-2">
           <span class="material-symbols-outlined">menu</span>
         </button>
-        <div>
-          <h1 id="page-title" class="text-sm font-bold text-white tracking-tight flex items-center gap-2">
-            Usage & Analytics
-          </h1>
-        </div>
+        <h2 id="top-title" class="text-sm font-semibold text-text-main tracking-tight">
+          Endpoint & Key
+        </h2>
       </div>
 
-      <div class="flex items-center gap-2.5">
-        <span class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-800/40 text-xs font-mono font-medium">
-          <span class="size-1.5 rounded-full bg-emerald-400 animate-subms"></span>
-          Latency &lt; 0.5ms
+      <div class="flex items-center gap-3">
+        <span class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-950/70 text-emerald-400 border border-emerald-800/40 text-xs font-mono">
+          <span class="size-1.5 rounded-full bg-emerald-400"></span>
+          Hono RegExpRouter &lt; 0.5ms
         </span>
-        <button onclick="refreshAll()" class="p-2 rounded-lg bg-bg-card hover:bg-bg-elevated border border-border-subtle text-gray-300 hover:text-white transition-all text-xs flex items-center gap-1.5 shadow-sm">
+
+        <button onclick="refreshData()" class="px-3 py-1.5 rounded-lg bg-surface hover:bg-surface-2 border border-border text-xs text-text-muted hover:text-white flex items-center gap-1.5 transition-all">
           <span class="material-symbols-outlined text-[16px]">refresh</span>
-          <span class="hidden sm:inline text-xs font-medium">Refresh</span>
+          <span class="font-medium">Refresh</span>
         </button>
       </div>
     </header>
 
-    <!-- Scrollable Workspace Views -->
-    <main class="flex-1 overflow-y-auto custom-scrollbar p-4 lg:p-8">
+    <!-- Content Workspace -->
+    <main class="flex-1 overflow-y-auto custom-scrollbar p-6 lg:p-10">
       <div class="max-w-7xl mx-auto space-y-6">
 
-        <!-- VIEW 1: USAGE & ANALYTICS -->
-        <div id="view-usage" class="view-panel space-y-6">
-          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-            <div class="bg-bg-card border border-border-subtle rounded-xl p-4 shadow-sm relative overflow-hidden">
-              <div class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1 flex items-center justify-between">
-                <span>Total Tokens</span>
-                <span class="material-symbols-outlined text-[18px] text-cyan-400">auto_awesome</span>
+        <!-- ======================================================== -->
+        <!-- TAB 1: ENDPOINT & KEY (Default Landing Page in 9Router)  -->
+        <!-- ======================================================== -->
+        <div id="view-endpoint" class="view-panel space-y-6">
+          
+          <!-- Top alert banner -->
+          <div class="bg-surface border border-border rounded-[14px] p-5 space-y-4">
+            <div>
+              <h3 class="text-base font-semibold text-text-main">Local Endpoint Details</h3>
+              <p class="text-xs text-text-muted mt-0.5">Use this endpoint in your CLI tools, IDEs, and local coding harnesses</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 font-mono text-xs">
+              <div class="bg-bg-alt p-3.5 rounded-lg border border-border flex flex-col justify-between">
+                <span class="text-[11px] text-text-muted uppercase tracking-wider font-semibold">OpenAI Compatible URL</span>
+                <div class="mt-2 flex items-center justify-between">
+                  <span id="lbl-openai-url" class="text-[#E56A4A] font-bold">http://localhost:20129/v1</span>
+                  <button onclick="copyToClipboard('http://localhost:20129/v1')" class="px-2 py-0.5 bg-surface hover:bg-surface-2 rounded text-[11px] text-text-main">Copy</button>
+                </div>
               </div>
-              <div id="u-total-tokens" class="text-xl lg:text-2xl font-bold font-mono text-white">...</div>
-              <div class="mt-2 text-[11px] text-gray-400 font-mono truncate">
-                <span id="u-prompt-tokens" class="text-cyan-400">0</span> in \xB7 <span id="u-comp-tokens" class="text-emerald-400">0</span> out
+
+              <div class="bg-bg-alt p-3.5 rounded-lg border border-border flex flex-col justify-between">
+                <span class="text-[11px] text-text-muted uppercase tracking-wider font-semibold">Claude Messages URL</span>
+                <div class="mt-2 flex items-center justify-between">
+                  <span id="lbl-claude-url" class="text-emerald-400 font-bold">http://localhost:20129/v1</span>
+                  <button onclick="copyToClipboard('http://localhost:20129/v1')" class="px-2 py-0.5 bg-surface hover:bg-surface-2 rounded text-[11px] text-text-main">Copy</button>
+                </div>
               </div>
             </div>
 
-            <div class="bg-bg-card border border-border-subtle rounded-xl p-4 shadow-sm relative overflow-hidden">
-              <div class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1 flex items-center justify-between">
-                <span>Total Requests</span>
-                <span class="material-symbols-outlined text-[18px] text-emerald-400">bolt</span>
+            <!-- Quick Start Cards -->
+            <div class="space-y-3 pt-2">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-text-muted font-mono">Integration Commands</h4>
+              
+              <div class="bg-bg-alt p-3.5 rounded-lg border border-border font-mono text-xs space-y-1.5">
+                <div class="text-[11px] text-[#E56A4A] font-bold">Claude Code CLI:</div>
+                <div class="bg-[#141414] p-2.5 rounded text-gray-300 overflow-x-auto select-all">
+                  ANTHROPIC_BASE_URL="http://localhost:20129" claude
+                </div>
               </div>
-              <div id="u-total-requests" class="text-xl lg:text-2xl font-bold font-mono text-white">...</div>
-              <div class="mt-2 text-[11px] text-gray-400 font-mono">
-                Across <span id="u-accounts-count" class="text-white font-bold">0</span> Accounts
+
+              <div class="bg-bg-alt p-3.5 rounded-lg border border-border font-mono text-xs space-y-1.5">
+                <div class="text-[11px] text-emerald-400 font-bold">Cursor / Aider / OpenAI Compatible Tools:</div>
+                <div class="bg-[#141414] p-2.5 rounded text-gray-300 overflow-x-auto select-all">
+                  OPENAI_BASE_URL="http://localhost:20129/v1" OPENAI_API_KEY="sk-any-key"
+                </div>
               </div>
             </div>
 
-            <div class="bg-bg-card border border-border-subtle rounded-xl p-4 shadow-sm relative overflow-hidden">
-              <div class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1 flex items-center justify-between">
-                <span>Estimated Value</span>
-                <span class="material-symbols-outlined text-[18px] text-violet-400">attach_money</span>
+            <!-- API Keys in Database -->
+            <div class="pt-4 border-t border-border space-y-3">
+              <div class="flex items-center justify-between">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-text-muted font-mono">Active API Keys</h4>
+                <span id="cnt-keys" class="text-xs font-mono text-text-muted">0 keys</span>
               </div>
-              <div id="u-total-cost" class="text-xl lg:text-2xl font-bold font-mono text-white">$0.00</div>
-              <div class="mt-2 text-[11px] text-gray-400 font-mono">
-                API Equivalent Saved
+              <div id="list-keys" class="space-y-2 font-mono text-xs">
+                <!-- Dynamically loaded -->
               </div>
-            </div>
-
-            <div class="bg-bg-card border border-border-subtle rounded-xl p-4 shadow-sm relative overflow-hidden">
-              <div class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1 flex items-center justify-between">
-                <span>Routing Engine</span>
-                <span class="material-symbols-outlined text-[18px] text-amber-400">speed</span>
-              </div>
-              <div class="text-xl lg:text-2xl font-bold font-mono text-amber-300">&lt; 0.45 ms</div>
-              <div class="mt-2 text-[11px] text-emerald-400 font-mono">
-                Hono RegExpRouter Native
-              </div>
-            </div>
-          </div>
-
-          <!-- Timeline Chart -->
-          <div class="bg-bg-card border border-border-subtle rounded-xl p-5 shadow-sm">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
-              <div>
-                <h2 class="text-sm font-bold text-white tracking-tight flex items-center gap-2">
-                  <span>Throughput Timeline</span>
-                </h2>
-                <p class="text-xs text-gray-400">Daily token volume recorded in SQLite ledger</p>
-              </div>
-
-              <div class="inline-flex bg-bg-subtle p-1 rounded-lg border border-border-subtle">
-                <button onclick="selectPeriod('today')" id="p-today" class="period-tab px-3 py-1 text-xs font-medium rounded-md text-gray-400 hover:text-white transition-all">Today</button>
-                <button onclick="selectPeriod('7d')" id="p-7d" class="period-tab px-3 py-1 text-xs font-medium rounded-md text-gray-400 hover:text-white transition-all">7D</button>
-                <button onclick="selectPeriod('30d')" id="p-30d" class="period-tab px-3 py-1 text-xs font-medium rounded-md text-gray-400 hover:text-white transition-all">30D</button>
-                <button onclick="selectPeriod('60d')" id="p-60d" class="period-tab px-3 py-1 text-xs font-medium rounded-md text-gray-400 hover:text-white transition-all">60D</button>
-                <button onclick="selectPeriod('all')" id="p-all" class="period-tab px-3 py-1 text-xs font-semibold rounded-md bg-brand-500 text-black shadow-sm transition-all">All</button>
-              </div>
-            </div>
-
-            <div class="h-64 lg:h-72 w-full">
-              <canvas id="mainChart"></canvas>
             </div>
           </div>
 
-          <!-- Top Models & Provider Breakdown -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="bg-bg-card border border-border-subtle rounded-xl p-5 shadow-sm">
-              <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3 flex items-center justify-between">
-                <span>Top Models by Requests</span>
-                <span class="text-[10px] text-cyan-400 font-mono font-normal">Active Breakdown</span>
-              </h3>
-              <div id="top-models-container" class="space-y-2.5 max-h-80 overflow-y-auto custom-scrollbar pr-1"></div>
-            </div>
-
-            <div class="bg-bg-card border border-border-subtle rounded-xl p-5 shadow-sm">
-              <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3 flex items-center justify-between">
-                <span>Provider Accounts Breakdown</span>
-                <span class="text-[10px] text-emerald-400 font-mono font-normal">Health Pool</span>
-              </h3>
-              <div id="provider-matrix-container" class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-80 overflow-y-auto custom-scrollbar pr-1"></div>
-            </div>
-          </div>
         </div>
 
-        <!-- VIEW 2: PROVIDERS & ACCOUNTS -->
+
+        <!-- ======================================================== -->
+        <!-- TAB 2: PROVIDERS & ACCOUNTS (Full table view)            -->
+        <!-- ======================================================== -->
         <div id="view-providers" class="view-panel hidden space-y-4">
-          <div class="bg-bg-card border border-border-subtle rounded-xl p-5 shadow-sm">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          <div class="bg-surface border border-border rounded-[14px] p-5 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h2 class="text-base font-bold text-white tracking-tight">Active Provider Accounts Pool</h2>
-                <p class="text-xs text-gray-400">All credentials securely managed via SQLite with automatic circuit breakers</p>
+                <h3 class="text-base font-semibold text-text-main">Connected Provider Accounts</h3>
+                <p class="text-xs text-text-muted mt-0.5">Rotated failover accounts loaded directly from SQLite</p>
               </div>
-              <div class="w-full sm:w-72">
-                <input type="text" id="filter-acc-input" oninput="searchAccounts()" placeholder="Filter by name, provider, email..." class="w-full bg-bg-subtle border border-border-subtle rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-brand-500 transition-all font-mono">
-              </div>
+              <input type="text" id="inp-search-accounts" oninput="filterAccounts()" placeholder="Filter by email, name, provider..." class="w-full sm:w-72 bg-bg-alt border border-border rounded-lg px-3 py-1.5 text-xs text-text-main placeholder-text-subtle focus:outline-none focus:border-brand-500 font-mono">
             </div>
 
-            <div class="overflow-x-auto custom-scrollbar max-h-[600px]">
-              <table class="w-full text-left text-xs text-gray-300">
-                <thead class="bg-bg-subtle/80 uppercase text-[10px] text-gray-400 font-mono sticky top-0 backdrop-blur-md">
+            <div class="overflow-x-auto custom-scrollbar max-h-[600px] border border-border rounded-lg">
+              <table class="w-full text-left text-xs text-text-main">
+                <thead class="bg-bg-alt uppercase text-[10px] text-text-muted font-mono sticky top-0 border-b border-border">
                   <tr>
                     <th class="py-2.5 px-3">Provider</th>
                     <th class="py-2.5 px-3">Account Name / Email</th>
@@ -53148,162 +53131,223 @@ var dashboard_default = `<!DOCTYPE html>
                     <th class="py-2.5 px-3">Account ID</th>
                   </tr>
                 </thead>
-                <tbody id="accounts-rows" class="divide-y divide-border-subtle font-mono"></tbody>
+                <tbody id="tbl-accounts" class="divide-y divide-border font-mono">
+                  <!-- Dynamically rendered -->
+                </tbody>
               </table>
             </div>
           </div>
         </div>
 
-        <!-- VIEW 3: ENDPOINT & KEYS -->
-        <div id="view-endpoint" class="view-panel hidden space-y-6">
-          <div class="bg-bg-card border border-border-subtle rounded-xl p-5 shadow-sm space-y-5">
-            <div>
-              <h2 class="text-base font-bold text-white tracking-tight">Endpoint Configuration</h2>
-              <p class="text-xs text-gray-400">Use this local endpoint in your coding harnesses, IDE extensions, or agent scripts</p>
-            </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono text-xs">
-              <div class="bg-bg-subtle p-3.5 rounded-lg border border-border-subtle">
-                <div class="text-[10px] text-gray-400 mb-1 font-semibold uppercase">OpenAI Base URL</div>
-                <div class="flex items-center justify-between text-cyan-400 font-bold">
-                  <span id="cfg-openai-url">http://localhost:20129/v1</span>
-                  <button onclick="copyText('http://localhost:20129/v1')" class="text-gray-400 hover:text-white">Copy</button>
-                </div>
-              </div>
-
-              <div class="bg-bg-subtle p-3.5 rounded-lg border border-border-subtle">
-                <div class="text-[10px] text-gray-400 mb-1 font-semibold uppercase">Claude Messages URL</div>
-                <div class="flex items-center justify-between text-emerald-400 font-bold">
-                  <span id="cfg-claude-url">http://localhost:20129/v1</span>
-                  <button onclick="copyText('http://localhost:20129/v1')" class="text-gray-400 hover:text-white">Copy</button>
-                </div>
-              </div>
-            </div>
-
-            <div class="space-y-3">
-              <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400">Integration Commands</h3>
-              <div class="bg-bg-subtle p-3 rounded-lg border border-border-subtle space-y-1.5 font-mono text-xs">
-                <div class="text-[11px] text-cyan-400 font-bold">Claude Code CLI Integration:</div>
-                <div class="text-gray-300 bg-bg/60 p-2 rounded overflow-x-auto">ANTHROPIC_BASE_URL="http://localhost:20129" claude</div>
-              </div>
-              <div class="bg-bg-subtle p-3 rounded-lg border border-border-subtle space-y-1.5 font-mono text-xs">
-                <div class="text-[11px] text-emerald-400 font-bold">Cursor / Aider / OpenAI SDK:</div>
-                <div class="text-gray-300 bg-bg/60 p-2 rounded overflow-x-auto">OPENAI_BASE_URL="http://localhost:20129/v1" OPENAI_API_KEY="sk-any-key"</div>
-              </div>
-            </div>
-
-            <div class="pt-3 border-t border-border-subtle">
-              <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">Registered API Keys</h3>
-              <div id="api-keys-list" class="space-y-2 font-mono text-xs"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- VIEW 4: COMBOS -->
+        <!-- ======================================================== -->
+        <!-- TAB 3: COMBOS & VISION ADAPTER                           -->
+        <!-- ======================================================== -->
         <div id="view-combos" class="view-panel hidden space-y-4">
-          <div class="bg-bg-card border border-border-subtle rounded-xl p-5 shadow-sm space-y-4">
+          <div class="bg-surface border border-border rounded-[14px] p-5 space-y-4">
             <div>
-              <h2 class="text-base font-bold text-white tracking-tight">Combos & Vision Adapter</h2>
-              <p class="text-xs text-gray-400">Multi-model fallback arrays and capacity-based auto routing</p>
+              <h3 class="text-base font-semibold text-text-main">Combo & Vision Adapters</h3>
+              <p class="text-xs text-text-muted mt-0.5">Automated multi-model failover chains and vision capacity adapters</p>
             </div>
-            <div id="combos-list" class="space-y-3"></div>
+            <div id="list-combos" class="space-y-2.5">
+              <!-- Dynamically populated -->
+            </div>
           </div>
         </div>
 
-        <!-- VIEW 5: TOKEN SAVER -->
+
+        <!-- ======================================================== -->
+        <!-- TAB 4: USAGE & ANALYTICS (Matches 9router usage view)    -->
+        <!-- ======================================================== -->
+        <div id="view-usage" class="view-panel hidden space-y-6">
+          
+          <!-- 4 Stat Cards -->
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <div class="bg-surface border border-border rounded-[14px] p-4">
+              <span class="text-[11px] font-semibold text-text-muted uppercase tracking-wider block mb-1">Total Tokens</span>
+              <div id="st-total-tokens" class="text-xl lg:text-2xl font-bold font-mono text-text-main">...</div>
+              <div class="mt-2 text-[11px] text-text-muted font-mono truncate">
+                <span id="st-prompt-tokens" class="text-[#E56A4A]">0</span> in \xB7 <span id="st-comp-tokens" class="text-emerald-400">0</span> out
+              </div>
+            </div>
+
+            <div class="bg-surface border border-border rounded-[14px] p-4">
+              <span class="text-[11px] font-semibold text-text-muted uppercase tracking-wider block mb-1">Total Requests</span>
+              <div id="st-total-requests" class="text-xl lg:text-2xl font-bold font-mono text-text-main">...</div>
+              <div class="mt-2 text-[11px] text-text-muted font-mono">
+                Across <span id="st-active-acc" class="text-text-main font-bold">0</span> Accounts
+              </div>
+            </div>
+
+            <div class="bg-surface border border-border rounded-[14px] p-4">
+              <span class="text-[11px] font-semibold text-text-muted uppercase tracking-wider block mb-1">Estimated Cost</span>
+              <div id="st-total-cost" class="text-xl lg:text-2xl font-bold font-mono text-text-main">$0.00</div>
+              <div class="mt-2 text-[11px] text-text-muted font-mono">
+                API Value Equivalent
+              </div>
+            </div>
+
+            <div class="bg-surface border border-border rounded-[14px] p-4">
+              <span class="text-[11px] font-semibold text-text-muted uppercase tracking-wider block mb-1">Routing Overhead</span>
+              <div class="text-xl lg:text-2xl font-bold font-mono text-emerald-400">&lt; 0.45 ms</div>
+              <div class="mt-2 text-[11px] text-text-muted font-mono">
+                Hono RegExpRouter
+              </div>
+            </div>
+          </div>
+
+          <!-- Throughput Chart with Period Selector -->
+          <div class="bg-surface border border-border rounded-[14px] p-5 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 class="text-sm font-semibold text-text-main">Token Throughput Timeline</h3>
+                <p class="text-xs text-text-muted mt-0.5">Historical ledger data from SQLite</p>
+              </div>
+
+              <!-- Period Filter Buttons -->
+              <div class="inline-flex bg-bg-alt p-1 rounded-lg border border-border">
+                <button onclick="changePeriod('today')" id="btn-p-today" class="px-3 py-1 text-xs font-medium rounded text-text-muted hover:text-white transition-all">Today</button>
+                <button onclick="changePeriod('7d')" id="btn-p-7d" class="px-3 py-1 text-xs font-medium rounded text-text-muted hover:text-white transition-all">7D</button>
+                <button onclick="changePeriod('30d')" id="btn-p-30d" class="px-3 py-1 text-xs font-medium rounded text-text-muted hover:text-white transition-all">30D</button>
+                <button onclick="changePeriod('60d')" id="btn-p-60d" class="px-3 py-1 text-xs font-medium rounded text-text-muted hover:text-white transition-all">60D</button>
+                <button onclick="changePeriod('all')" id="btn-p-all" class="px-3 py-1 text-xs font-bold rounded bg-brand-500 text-white shadow-sm transition-all">All</button>
+              </div>
+            </div>
+
+            <div class="h-64 lg:h-72 w-full">
+              <canvas id="chart-canvas"></canvas>
+            </div>
+          </div>
+
+          <!-- Top Models & Provider Breakdown -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-surface border border-border rounded-[14px] p-5 space-y-3">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-text-muted font-mono flex items-center justify-between">
+                <span>Top Models by Volume</span>
+                <span class="text-[10px] text-[#E56A4A]">Ranked by Requests</span>
+              </h4>
+              <div id="list-top-models" class="space-y-2 max-h-80 overflow-y-auto custom-scrollbar pr-1"></div>
+            </div>
+
+            <div class="bg-surface border border-border rounded-[14px] p-5 space-y-3">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-text-muted font-mono flex items-center justify-between">
+                <span>Provider Accounts Breakdown</span>
+                <span class="text-[10px] text-emerald-400">Health Pool</span>
+              </h4>
+              <div id="grid-providers" class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-80 overflow-y-auto custom-scrollbar pr-1"></div>
+            </div>
+          </div>
+
+        </div>
+
+
+        <!-- ======================================================== -->
+        <!-- TAB 5: TOKEN SAVER                                       -->
+        <!-- ======================================================== -->
         <div id="view-tokensaver" class="view-panel hidden space-y-4">
-          <div class="bg-bg-card border border-border-subtle rounded-xl p-5 shadow-sm space-y-4">
+          <div class="bg-surface border border-border rounded-[14px] p-5 space-y-4">
             <div>
-              <h2 class="text-base font-bold text-white tracking-tight">Token Saver & Optimization Engine</h2>
-              <p class="text-xs text-gray-400">Built-in RTK compression, Undici keep-alive, and latency reduction features</p>
+              <h3 class="text-base font-semibold text-text-main">Token Saver & Latency Optimizations</h3>
+              <p class="text-xs text-text-muted mt-0.5">Active optimization engines reducing token waste and network stalls</p>
             </div>
-            <div id="tokensaver-features" class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono"></div>
+            <div id="grid-tokensaver" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs font-mono">
+              <!-- Dynamically populated -->
+            </div>
           </div>
         </div>
 
-        <!-- VIEW 6: PLAYGROUND -->
+
+        <!-- ======================================================== -->
+        <!-- TAB 6: LIVE PLAYGROUND                                   -->
+        <!-- ======================================================== -->
         <div id="view-playground" class="view-panel hidden space-y-4">
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="bg-bg-card border border-border-subtle rounded-xl p-5 space-y-4">
-              <h2 class="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center justify-between">
+            <div class="bg-surface border border-border rounded-[14px] p-5 space-y-4">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-text-muted flex items-center justify-between">
                 <span>Playground Options</span>
-                <span class="text-cyan-400 font-mono">\u26A1 Direct Route</span>
-              </h2>
+                <span class="text-[#E56A4A] font-mono">\u26A1 Direct Route</span>
+              </h3>
 
               <div>
-                <label class="block text-xs text-gray-400 mb-1">Model Target</label>
-                <select id="pg-model" class="w-full bg-bg-subtle border border-border-subtle rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brand-500 font-mono">
-                  <option value="gemini-3.8-flash-high">gemini-3.8-flash-high (Antigravity)</option>
-                  <option value="gemini-3.7-flash-high">gemini-3.7-flash-high (Antigravity)</option>
-                  <option value="claude-opus-4-6-thinking">claude-opus-4-6-thinking (Antigravity)</option>
-                  <option value="deepseek-v4-flash">deepseek-v4-flash</option>
+                <label class="block text-xs text-text-muted mb-1 font-mono">Model Target</label>
+                <select id="sel-pg-model" class="w-full bg-bg-alt border border-border rounded-lg p-2.5 text-xs text-text-main focus:outline-none focus:border-brand-500 font-mono">
+                  <!-- Populated from 682 catalog models -->
                 </select>
               </div>
 
               <div>
-                <label class="block text-xs text-gray-400 mb-1">API Protocol</label>
-                <select id="pg-protocol" class="w-full bg-bg-subtle border border-border-subtle rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brand-500 font-mono">
-                  <option value="/v1/chat/completions">POST /v1/chat/completions (OpenAI)</option>
-                  <option value="/v1/messages">POST /v1/messages (Claude)</option>
+                <label class="block text-xs text-text-muted mb-1 font-mono">Protocol</label>
+                <select id="sel-pg-proto" class="w-full bg-bg-alt border border-border rounded-lg p-2.5 text-xs text-text-main focus:outline-none focus:border-brand-500 font-mono">
+                  <option value="/v1/chat/completions">POST /v1/chat/completions (OpenAI Format)</option>
+                  <option value="/v1/messages">POST /v1/messages (Claude Format)</option>
                 </select>
               </div>
 
               <div>
-                <label class="block text-xs text-gray-400 mb-1">System Message</label>
-                <textarea id="pg-system" rows="2" class="w-full bg-bg-subtle border border-border-subtle rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brand-500">You are a helpful and concise assistant.</textarea>
+                <label class="block text-xs text-text-muted mb-1 font-mono">System Message</label>
+                <textarea id="txt-pg-system" rows="2" class="w-full bg-bg-alt border border-border rounded-lg p-2.5 text-xs text-text-main focus:outline-none focus:border-brand-500 font-mono">You are a helpful AI assistant running on 9router-hono.</textarea>
               </div>
 
               <div>
-                <label class="block text-xs text-gray-400 mb-1">User Prompt</label>
-                <textarea id="pg-prompt" rows="3" class="w-full bg-bg-subtle border border-border-subtle rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brand-500">Ceritakan 1 lelucon lucu tentang programmer.</textarea>
+                <label class="block text-xs text-text-muted mb-1 font-mono">User Prompt</label>
+                <textarea id="txt-pg-prompt" rows="3" class="w-full bg-bg-alt border border-border rounded-lg p-2.5 text-xs text-text-main focus:outline-none focus:border-brand-500 font-mono">Tuliskan 1 pantun jenaka tentang programmer dan kopi.</textarea>
               </div>
 
-              <button onclick="executePlayground()" id="pg-btn" class="w-full py-2.5 rounded-lg bg-gradient-to-r from-brand-500 to-cyan-400 text-black font-bold text-xs uppercase tracking-wider hover:opacity-90 transition-all flex items-center justify-center gap-1.5 shadow-md">
+              <button onclick="runPlaygroundTest()" id="btn-pg-submit" class="w-full py-2.5 rounded-lg bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-[0_2px_12px_-2px_rgba(229,106,74,0.3)]">
                 <span class="material-symbols-outlined text-[16px]">play_arrow</span>
                 <span>Send Request</span>
               </button>
             </div>
 
-            <div class="lg:col-span-2 bg-bg-card border border-border-subtle rounded-xl p-5 flex flex-col">
-              <div class="flex items-center justify-between border-b border-border-subtle pb-3 mb-3 text-xs">
-                <span class="font-bold text-white uppercase tracking-wider">Stream Output</span>
-                <span id="pg-latency" class="font-mono text-gray-400">Idle</span>
+            <div class="lg:col-span-2 bg-surface border border-border rounded-[14px] p-5 flex flex-col">
+              <div class="flex items-center justify-between border-b border-border pb-3 mb-3 text-xs">
+                <span class="font-bold text-text-main uppercase tracking-wider">Stream Output</span>
+                <span id="txt-pg-latency" class="font-mono text-text-muted">Idle</span>
               </div>
-              <div id="pg-output" class="flex-1 min-h-[300px] bg-bg-subtle rounded-lg p-4 font-mono text-xs text-gray-200 overflow-y-auto whitespace-pre-wrap custom-scrollbar border border-border-subtle">
+              <div id="txt-pg-output" class="flex-1 min-h-[320px] bg-bg-alt rounded-lg p-4 font-mono text-xs text-gray-300 overflow-y-auto whitespace-pre-wrap custom-scrollbar border border-border">
                 Click "Send Request" to test the ultra-fast Hono pipeline live...
               </div>
             </div>
           </div>
         </div>
 
-        <!-- VIEW 7: MODEL CATALOG -->
+
+        <!-- ======================================================== -->
+        <!-- TAB 7: MODEL CATALOG (680+ Models Grid)                  -->
+        <!-- ======================================================== -->
         <div id="view-catalog" class="view-panel hidden space-y-4">
-          <div class="bg-bg-card border border-border-subtle rounded-xl p-5 shadow-sm space-y-4">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
+          <div class="bg-surface border border-border rounded-[14px] p-5 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h2 class="text-base font-bold text-white tracking-tight">OpenAI Compatible Catalog</h2>
-                <p class="text-xs text-gray-400">Models advertised through <code class="text-cyan-400">GET /v1/models</code></p>
+                <h3 class="text-base font-semibold text-text-main">OpenAI Compatible Catalog</h3>
+                <p class="text-xs text-text-muted mt-0.5">Models advertised through <code class="text-[#E56A4A]">GET /v1/models</code></p>
               </div>
-              <input type="text" id="catalog-search" oninput="searchCatalog()" placeholder="Search model name..." class="w-full sm:w-64 bg-bg-subtle border border-border-subtle rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-brand-500 font-mono">
+              <input type="text" id="inp-search-catalog" oninput="filterCatalogCards()" placeholder="Search model name..." class="w-full sm:w-64 bg-bg-alt border border-border rounded-lg px-3 py-1.5 text-xs text-text-main placeholder-text-subtle focus:outline-none focus:border-brand-500 font-mono">
             </div>
-            <div id="catalog-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[600px] overflow-y-auto custom-scrollbar pr-1"></div>
+
+            <div id="grid-catalog" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[600px] overflow-y-auto custom-scrollbar pr-1">
+              <!-- Dynamically populated -->
+            </div>
           </div>
         </div>
 
-        <!-- VIEW 8: CONSOLE LOGS -->
+
+        <!-- ======================================================== -->
+        <!-- TAB 8: CONSOLE LOGS                                      -->
+        <!-- ======================================================== -->
         <div id="view-logs" class="view-panel hidden space-y-4">
-          <div class="bg-bg-card border border-border-subtle rounded-xl p-5 shadow-sm space-y-4">
+          <div class="bg-surface border border-border rounded-[14px] p-5 space-y-4">
             <div class="flex items-center justify-between">
               <div>
-                <h2 class="text-base font-bold text-white tracking-tight">Recent Request Logs</h2>
-                <p class="text-xs text-gray-400">Activity stream from SQLite usage history</p>
+                <h3 class="text-base font-semibold text-text-main">Recent Request Logs</h3>
+                <p class="text-xs text-text-muted mt-0.5">Activity stream from SQLite usage history</p>
               </div>
-              <button onclick="loadLogsView()" class="px-3 py-1 bg-bg-subtle hover:bg-bg-elevated border border-border-subtle text-xs rounded text-white font-mono">Reload</button>
+              <button onclick="loadLogs()" class="px-3 py-1 bg-bg-alt hover:bg-surface-2 border border-border text-xs rounded text-text-main font-mono">Reload</button>
             </div>
 
-            <div class="overflow-x-auto custom-scrollbar max-h-[580px]">
-              <table class="w-full text-left text-xs text-gray-300">
-                <thead class="bg-bg-subtle uppercase text-[10px] text-gray-400 font-mono sticky top-0 backdrop-blur-md">
+            <div class="overflow-x-auto custom-scrollbar max-h-[580px] border border-border rounded-lg">
+              <table class="w-full text-left text-xs text-text-main">
+                <thead class="bg-bg-alt uppercase text-[10px] text-text-muted font-mono sticky top-0 border-b border-border">
                   <tr>
                     <th class="py-2.5 px-3">Time</th>
                     <th class="py-2.5 px-3">Provider</th>
@@ -53312,7 +53356,9 @@ var dashboard_default = `<!DOCTYPE html>
                     <th class="py-2.5 px-3">Status</th>
                   </tr>
                 </thead>
-                <tbody id="logs-rows" class="divide-y divide-border-subtle font-mono"></tbody>
+                <tbody id="tbl-logs" class="divide-y divide-border font-mono">
+                  <!-- Dynamically populated -->
+                </tbody>
               </table>
             </div>
           </div>
@@ -53324,13 +53370,13 @@ var dashboard_default = `<!DOCTYPE html>
 
   <script>
     var globalChart = null;
-    var currentPeriod = 'all';
-    var accountsData = [];
-    var catalogData = [];
+    var activePeriod = 'all';
+    var accountsList = [];
+    var catalogList = [];
 
     function toggleSidebar(open) {
-      var sidebar = document.getElementById('main-sidebar');
-      var overlay = document.getElementById('sidebar-overlay');
+      var sidebar = document.getElementById('app-sidebar');
+      var overlay = document.getElementById('drawer-overlay');
       if (open) {
         sidebar.classList.remove('-translate-x-full');
         overlay.classList.remove('hidden');
@@ -53346,39 +53392,40 @@ var dashboard_default = `<!DOCTYPE html>
         panels[i].classList.add('hidden');
       }
 
-      var navs = document.querySelectorAll('.nav-item');
+      var navs = document.querySelectorAll('.nav-link');
       for (var j = 0; j < navs.length; j++) {
         navs[j].classList.remove('active');
       }
 
-      var targetView = document.getElementById('view-' + viewKey);
+      var targetPanel = document.getElementById('view-' + viewKey);
       var targetNav = document.getElementById('nav-' + viewKey);
-      if (targetView) targetView.classList.remove('hidden');
+      if (targetPanel) targetPanel.classList.remove('hidden');
       if (targetNav) targetNav.classList.add('active');
 
       var titles = {
-        usage: 'Usage & Analytics',
+        endpoint: 'Endpoint & Key',
         providers: 'Providers & Accounts',
-        endpoint: 'Endpoint & Keys',
-        combos: 'Combos & Vision Adapters',
-        tokensaver: 'Token Saver & Optimizations',
+        combos: 'Combo & Vision Adapter',
+        usage: 'Usage & Analytics',
+        tokensaver: 'Token Saver',
         playground: 'Live Playground \u26A1',
         catalog: 'Model Catalog',
-        logs: 'Console Logs'
+        logs: 'Console Log'
       };
-      document.getElementById('page-title').textContent = titles[viewKey] || 'Dashboard';
+      document.getElementById('top-title').textContent = titles[viewKey] || '9Router';
 
       toggleSidebar(false);
 
-      if (viewKey === 'providers') loadAccountsView();
-      if (viewKey === 'catalog') loadCatalogView();
-      if (viewKey === 'combos') loadCombosView();
-      if (viewKey === 'tokensaver') loadTokenSaverView();
-      if (viewKey === 'endpoint') loadEndpointView();
-      if (viewKey === 'logs') loadLogsView();
+      if (viewKey === 'endpoint') loadEndpoint();
+      if (viewKey === 'providers') loadAccounts();
+      if (viewKey === 'combos') loadCombos();
+      if (viewKey === 'usage') loadUsage();
+      if (viewKey === 'tokensaver') loadTokenSaver();
+      if (viewKey === 'catalog') loadCatalog();
+      if (viewKey === 'logs') loadLogs();
     }
 
-    function fmtNum(n) {
+    function fmt(n) {
       if (!n && n !== 0) return '0';
       if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
       if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
@@ -53386,27 +53433,27 @@ var dashboard_default = `<!DOCTYPE html>
       return Number(n).toLocaleString();
     }
 
-    function selectPeriod(p) {
-      currentPeriod = p;
+    function changePeriod(p) {
+      activePeriod = p;
       var periods = ['today', '7d', '30d', '60d', 'all'];
       for (var i = 0; i < periods.length; i++) {
         var k = periods[i];
-        var btn = document.getElementById('p-' + k);
+        var btn = document.getElementById('btn-p-' + k);
         if (btn) {
           if (k === p) {
-            btn.className = 'period-tab px-3 py-1 text-xs font-semibold rounded-md bg-brand-500 text-black shadow-sm transition-all';
+            btn.className = 'px-3 py-1 text-xs font-bold rounded bg-brand-500 text-white shadow-sm transition-all';
           } else {
-            btn.className = 'period-tab px-3 py-1 text-xs font-medium rounded-md text-gray-400 hover:text-white transition-all';
+            btn.className = 'px-3 py-1 text-xs font-medium rounded text-text-muted hover:text-white transition-all';
           }
         }
       }
-      loadUsageData();
+      loadUsage();
     }
 
-    function loadUsageData() {
+    function loadUsage() {
       Promise.all([
-        fetch('/api/dashboard/stats?period=' + currentPeriod).then(function(r) { return r.json(); }),
-        fetch('/api/dashboard/chart?period=' + currentPeriod).then(function(r) { return r.json(); })
+        fetch('/api/dashboard/stats?period=' + activePeriod).then(function(r) { return r.json(); }),
+        fetch('/api/dashboard/chart?period=' + activePeriod).then(function(r) { return r.json(); })
       ]).then(function(results) {
         var statsRes = results[0];
         var chartRes = results[1];
@@ -53418,75 +53465,71 @@ var dashboard_default = `<!DOCTYPE html>
           var totalCached = s.totalCachedTokens || 0;
           var grandTotal = totalPrompt + totalComp + totalCached;
 
-          document.getElementById('u-total-tokens').textContent = fmtNum(grandTotal);
-          document.getElementById('u-prompt-tokens').textContent = fmtNum(totalPrompt);
-          document.getElementById('u-comp-tokens').textContent = fmtNum(totalComp);
-          document.getElementById('u-total-requests').textContent = (s.totalRequests || 0).toLocaleString();
-          document.getElementById('u-total-cost').textContent = '$' + (s.totalCost || 0).toFixed(2);
-          document.getElementById('u-accounts-count').textContent = statsRes.meta ? (statsRes.meta.totalAccounts || 0) : 0;
-          document.getElementById('nav-badge-accounts').textContent = statsRes.meta ? (statsRes.meta.totalAccounts || 0) : 0;
+          document.getElementById('st-total-tokens').textContent = fmt(grandTotal);
+          document.getElementById('st-prompt-tokens').textContent = fmt(totalPrompt);
+          document.getElementById('st-comp-tokens').textContent = fmt(totalComp);
+          document.getElementById('st-total-requests').textContent = (s.totalRequests || 0).toLocaleString();
+          document.getElementById('st-total-cost').textContent = '$' + (s.totalCost || 0).toFixed(2);
+          document.getElementById('st-active-acc').textContent = statsRes.meta ? (statsRes.meta.totalAccounts || 0) : 0;
+          document.getElementById('badge-accounts').textContent = statsRes.meta ? (statsRes.meta.totalAccounts || 0) : 0;
 
-          // Render top models
-          var modelsEl = document.getElementById('top-models-container');
+          // Top models
+          var modelsEl = document.getElementById('list-top-models');
           modelsEl.innerHTML = '';
-          var sortedModels = Object.entries(s.byModel || {})
-            .sort(function(a, b) { return (b[1].requests || 0) - (a[1].requests || 0); })
-            .slice(0, 10);
+          var sorted = Object.entries(s.byModel || {}).sort(function(a, b) {
+            return (b[1].requests || 0) - (a[1].requests || 0);
+          }).slice(0, 10);
 
-          sortedModels.forEach(function(item, idx) {
+          sorted.forEach(function(item, idx) {
             var key = item[0];
             var m = item[1];
             var row = document.createElement('div');
-            row.className = 'flex items-center justify-between p-2.5 rounded-lg bg-bg-subtle border border-border-subtle';
+            row.className = 'flex items-center justify-between p-2.5 rounded-lg bg-bg-alt border border-border';
             row.innerHTML = '<div class="flex items-center gap-2.5 min-w-0">' +
-              '<span class="size-6 rounded bg-bg-elevated text-cyan-400 font-mono font-bold text-xs flex items-center justify-center flex-shrink-0">' + (idx + 1) + '</span>' +
+              '<span class="size-6 rounded bg-surface-2 text-[#E56A4A] font-mono font-bold text-xs flex items-center justify-center flex-shrink-0">' + (idx + 1) + '</span>' +
               '<div class="truncate">' +
-                '<div class="text-xs font-semibold text-white truncate">' + (m.rawModel || key) + '</div>' +
-                '<div class="text-[10px] text-gray-400">' + (m.provider || 'default') + '</div>' +
+                '<div class="text-xs font-semibold text-text-main truncate">' + (m.rawModel || key) + '</div>' +
+                '<div class="text-[10px] text-text-muted">' + (m.provider || 'default') + '</div>' +
               '</div>' +
             '</div>' +
             '<div class="text-right font-mono text-xs flex-shrink-0">' +
-              '<div class="font-bold text-cyan-300">' + fmtNum(m.requests) + ' reqs</div>' +
-              '<div class="text-[10px] text-gray-400">' + fmtNum((m.promptTokens || 0) + (m.completionTokens || 0)) + ' tokens</div>' +
+              '<div class="font-bold text-[#E56A4A]">' + fmt(m.requests) + ' reqs</div>' +
+              '<div class="text-[10px] text-text-muted">' + fmt((m.promptTokens || 0) + (m.completionTokens || 0)) + ' tokens</div>' +
             '</div>';
             modelsEl.appendChild(row);
           });
 
-          // Render provider matrix
-          var provEl = document.getElementById('provider-matrix-container');
+          // Provider matrix
+          var provEl = document.getElementById('grid-providers');
           provEl.innerHTML = '';
           var provs = statsRes.meta ? (statsRes.meta.providers || {}) : {};
-          Object.entries(provs).sort(function(a, b) { return b[1] - a[1]; }).forEach(function(pitem) {
-            var prov = pitem[0];
-            var cnt = pitem[1];
+          Object.entries(provs).sort(function(a, b) { return b[1] - a[1]; }).forEach(function(p) {
             var card = document.createElement('div');
-            card.className = 'p-3 rounded-lg bg-bg-subtle border border-border-subtle flex flex-col justify-between';
-            card.innerHTML = '<span class="text-[11px] font-bold text-gray-300 truncate uppercase tracking-wider">' + prov + '</span>' +
+            card.className = 'p-3 rounded-lg bg-bg-alt border border-border flex flex-col justify-between';
+            card.innerHTML = '<span class="text-[11px] font-bold text-text-muted truncate uppercase tracking-wider font-mono">' + p[0] + '</span>' +
               '<div class="mt-2 flex items-baseline justify-between">' +
-                '<span class="text-base font-bold font-mono text-cyan-400">' + cnt + '</span>' +
-                '<span class="text-[10px] text-gray-500 font-mono">accounts</span>' +
+                '<span class="text-base font-bold font-mono text-emerald-400">' + p[1] + '</span>' +
+                '<span class="text-[10px] text-text-subtle font-mono">accounts</span>' +
               '</div>';
             provEl.appendChild(card);
           });
         }
 
-        renderUsageChart(chartRes);
-      }).catch(function(err) {
-        console.error("Usage load error:", err);
-      });
+        renderChart(chartRes);
+      }).catch(console.error);
     }
 
-    function renderUsageChart(chartData) {
+    function renderChart(chartData) {
       if (!Array.isArray(chartData) || !chartData.length) return;
-      var ctx = document.getElementById('mainChart').getContext('2d');
+      var ctx = document.getElementById('chart-canvas').getContext('2d');
       if (globalChart) globalChart.destroy();
 
       var labels = chartData.map(function(d) { return d.label; });
       var tokens = chartData.map(function(d) { return d.tokens || 0; });
 
       var gradient = ctx.createLinearGradient(0, 0, 0, 260);
-      gradient.addColorStop(0, 'rgba(6, 182, 212, 0.4)');
-      gradient.addColorStop(1, 'rgba(6, 182, 212, 0.0)');
+      gradient.addColorStop(0, 'rgba(229, 106, 74, 0.45)');
+      gradient.addColorStop(1, 'rgba(229, 106, 74, 0.0)');
 
       globalChart = new Chart(ctx, {
         type: 'line',
@@ -53495,9 +53538,9 @@ var dashboard_default = `<!DOCTYPE html>
           datasets: [{
             label: 'Tokens',
             data: tokens,
-            borderColor: '#22d3ee',
+            borderColor: '#E56A4A',
             borderWidth: 2,
-            pointBackgroundColor: '#06b6d4',
+            pointBackgroundColor: '#ea7855',
             pointRadius: chartData.length > 40 ? 0 : 2.5,
             fill: true,
             backgroundColor: gradient,
@@ -53510,10 +53553,10 @@ var dashboard_default = `<!DOCTYPE html>
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: '#18181b',
+              backgroundColor: '#262626',
               titleColor: '#fff',
-              bodyColor: '#22d3ee',
-              borderColor: 'rgba(255,255,255,0.1)',
+              bodyColor: '#E56A4A',
+              borderColor: '#333',
               borderWidth: 1,
               padding: 10,
               displayColors: false,
@@ -53532,7 +53575,7 @@ var dashboard_default = `<!DOCTYPE html>
               ticks: {
                 color: '#71717a',
                 font: { size: 10, family: 'JetBrains Mono' },
-                callback: function(v) { return fmtNum(v); }
+                callback: function(v) { return fmt(v); }
               }
             }
           }
@@ -53540,52 +53583,53 @@ var dashboard_default = `<!DOCTYPE html>
       });
     }
 
-    function loadAccountsView() {
+    function loadAccounts() {
       fetch('/api/dashboard/accounts').then(function(r) { return r.json(); }).then(function(data) {
-        accountsData = data || [];
-        renderAccountsTable(accountsData);
+        accountsList = data || [];
+        renderAccounts(accountsList);
       }).catch(console.error);
     }
 
-    function renderAccountsTable(list) {
-      var tbody = document.getElementById('accounts-rows');
+    function renderAccounts(list) {
+      var tbody = document.getElementById('tbl-accounts');
       tbody.innerHTML = '';
       list.forEach(function(a) {
         var tr = document.createElement('tr');
-        tr.className = 'hover:bg-white/[0.02] transition-colors';
-        tr.innerHTML = '<td class="py-2.5 px-3 font-semibold text-white">' + (a.provider || '-') + '</td>' +
-          '<td class="py-2.5 px-3 text-cyan-300 font-sans truncate max-w-[200px]">' + (a.name || a.email || '-') + '</td>' +
-          '<td class="py-2.5 px-3 text-gray-400 uppercase text-[10px]">' + (a.authType || '-') + '</td>' +
+        tr.className = 'hover:bg-surface-2/40 transition-colors';
+        tr.innerHTML = '<td class="py-2.5 px-3 font-semibold text-text-main">' + (a.provider || '-') + '</td>' +
+          '<td class="py-2.5 px-3 text-[#ea7855] font-sans truncate max-w-[200px]">' + (a.name || a.email || '-') + '</td>' +
+          '<td class="py-2.5 px-3 text-text-muted uppercase text-[10px]">' + (a.authType || '-') + '</td>' +
           '<td class="py-2.5 px-3">' +
             '<span class="px-2 py-0.5 rounded text-[10px] font-bold ' + (a.isActive ? 'bg-emerald-950 text-emerald-400 border border-emerald-800/50' : 'bg-rose-950 text-rose-400 border border-rose-800/50') + '">' +
               (a.isActive ? 'Active' : 'Disabled') +
             '</span>' +
           '</td>' +
-          '<td class="py-2.5 px-3 text-gray-400">' + (a.priority || 0) + '</td>' +
-          '<td class="py-2.5 px-3 text-gray-500 text-[10px] truncate max-w-[120px]">' + (a.id || '-') + '</td>';
+          '<td class="py-2.5 px-3 text-text-muted">' + (a.priority || 0) + '</td>' +
+          '<td class="py-2.5 px-3 text-text-subtle text-[10px] truncate max-w-[120px]">' + (a.id || '-') + '</td>';
         tbody.appendChild(tr);
       });
     }
 
-    function searchAccounts() {
-      var q = document.getElementById('filter-acc-input').value.toLowerCase();
-      var filtered = accountsData.filter(function(a) {
+    function filterAccounts() {
+      var q = document.getElementById('inp-search-accounts').value.toLowerCase();
+      var filtered = accountsList.filter(function(a) {
         return (a.name || '').toLowerCase().indexOf(q) !== -1 ||
           (a.email || '').toLowerCase().indexOf(q) !== -1 ||
           (a.provider || '').toLowerCase().indexOf(q) !== -1;
       });
-      renderAccountsTable(filtered);
+      renderAccounts(filtered);
     }
 
-    function loadCatalogView() {
+    function loadCatalog() {
       fetch('/api/dashboard/models').then(function(r) { return r.json(); }).then(function(data) {
-        catalogData = data.models || [];
-        document.getElementById('nav-badge-models').textContent = catalogData.length;
-        renderCatalogCards(catalogData);
+        catalogList = data.models || [];
+        document.getElementById('badge-models').textContent = catalogList.length;
+        renderCatalog(catalogList);
 
-        var sel = document.getElementById('pg-model');
+        // Populate Playground model dropdown
+        var sel = document.getElementById('sel-pg-model');
         sel.innerHTML = '';
-        catalogData.forEach(function(m) {
+        catalogList.forEach(function(m) {
           var opt = document.createElement('option');
           opt.value = m.id;
           opt.textContent = m.id + (m.owned_by ? ' (' + m.owned_by + ')' : '');
@@ -53594,50 +53638,50 @@ var dashboard_default = `<!DOCTYPE html>
       }).catch(console.error);
     }
 
-    function renderCatalogCards(models) {
-      var container = document.getElementById('catalog-cards-container');
+    function renderCatalog(models) {
+      var container = document.getElementById('grid-catalog');
       container.innerHTML = '';
       models.forEach(function(m) {
         var card = document.createElement('div');
-        card.className = 'p-3.5 rounded-lg bg-bg-subtle border border-border-subtle flex flex-col justify-between';
+        card.className = 'p-3.5 rounded-lg bg-bg-alt border border-border flex flex-col justify-between';
         card.innerHTML = '<div>' +
-            '<div class="text-xs font-bold text-white font-mono break-all">' + m.id + '</div>' +
-            '<div class="text-[10px] text-cyan-400 mt-1 uppercase font-mono">' + (m.owned_by || '9router') + '</div>' +
+            '<div class="text-xs font-bold text-text-main font-mono break-all">' + m.id + '</div>' +
+            '<div class="text-[10px] text-[#ea7855] mt-1 uppercase font-mono">' + (m.owned_by || '9router') + '</div>' +
           '</div>' +
-          '<div class="mt-3 flex items-center justify-between text-[10px] text-gray-400 pt-2 border-t border-border-subtle">' +
-            '<span>Context: ' + (m.context_length ? fmtNum(m.context_length) : 'N/A') + '</span>' +
-            '<button onclick="copyText(\\'' + m.id + '\\')" class="text-xs text-gray-400 hover:text-white">Copy</button>' +
+          '<div class="mt-3 flex items-center justify-between text-[10px] text-text-muted pt-2 border-t border-border">' +
+            '<span>Context: ' + (m.context_length ? fmt(m.context_length) : 'N/A') + '</span>' +
+            '<button onclick="copyToClipboard(\\'' + m.id + '\\')" class="text-xs text-text-muted hover:text-white">Copy</button>' +
           '</div>';
         container.appendChild(card);
       });
     }
 
-    function searchCatalog() {
-      var q = document.getElementById('catalog-search').value.toLowerCase();
-      renderCatalogCards(catalogData.filter(function(m) { return m.id.toLowerCase().indexOf(q) !== -1; }));
+    function filterCatalogCards() {
+      var q = document.getElementById('inp-search-catalog').value.toLowerCase();
+      renderCatalog(catalogList.filter(function(m) { return m.id.toLowerCase().indexOf(q) !== -1; }));
     }
 
-    function loadCombosView() {
+    function loadCombos() {
       fetch('/api/dashboard/combos').then(function(r) { return r.json(); }).then(function(combos) {
-        var el = document.getElementById('combos-list');
+        var el = document.getElementById('list-combos');
         el.innerHTML = '';
         if (!combos || !combos.length) {
-          el.innerHTML = '<div class="text-xs text-gray-400 font-mono">No custom combos configured.</div>';
+          el.innerHTML = '<div class="text-xs text-text-muted font-mono">No custom combos configured.</div>';
           return;
         }
         combos.forEach(function(c) {
           var item = document.createElement('div');
-          item.className = 'p-3 rounded-lg bg-bg-subtle border border-border-subtle font-mono text-xs';
-          item.innerHTML = '<div class="font-bold text-white mb-1">' + c.name + '</div>' +
-            '<div class="text-[11px] text-gray-400">Models: ' + (c.models || []).join(' \u2192 ') + '</div>';
+          item.className = 'p-3 rounded-lg bg-bg-alt border border-border font-mono text-xs';
+          item.innerHTML = '<div class="font-bold text-text-main mb-1">' + c.name + '</div>' +
+            '<div class="text-[11px] text-text-muted">Models: ' + (c.models || []).join(' \u2192 ') + '</div>';
           el.appendChild(item);
         });
       }).catch(console.error);
     }
 
-    function loadTokenSaverView() {
+    function loadTokenSaver() {
       fetch('/api/dashboard/settings').then(function(r) { return r.json(); }).then(function(settings) {
-        var el = document.getElementById('tokensaver-features');
+        var el = document.getElementById('grid-tokensaver');
         el.innerHTML = '';
 
         var features = [
@@ -53651,12 +53695,12 @@ var dashboard_default = `<!DOCTYPE html>
 
         features.forEach(function(f) {
           var card = document.createElement('div');
-          card.className = 'p-3.5 rounded-lg bg-bg-subtle border border-border-subtle flex items-start justify-between gap-2';
+          card.className = 'p-3.5 rounded-lg bg-bg-alt border border-border flex items-start justify-between gap-2';
           card.innerHTML = '<div>' +
-              '<div class="font-bold text-white">' + f.title + '</div>' +
-              '<div class="text-[10px] text-gray-400 mt-1 font-sans">' + f.desc + '</div>' +
+              '<div class="font-bold text-text-main">' + f.title + '</div>' +
+              '<div class="text-[10px] text-text-muted mt-1 font-sans">' + f.desc + '</div>' +
             '</div>' +
-            '<span class="px-2 py-0.5 rounded text-[10px] font-bold ' + (f.active ? 'bg-emerald-950 text-emerald-400 border border-emerald-800/50' : 'bg-gray-800 text-gray-400') + '">' +
+            '<span class="px-2 py-0.5 rounded text-[10px] font-bold ' + (f.active ? 'bg-emerald-950 text-emerald-400 border border-emerald-800/50' : 'bg-surface-2 text-text-muted') + '">' +
               (f.active ? 'ENABLED' : 'OFF') +
             '</span>';
           el.appendChild(card);
@@ -53664,52 +53708,53 @@ var dashboard_default = `<!DOCTYPE html>
       }).catch(console.error);
     }
 
-    function loadEndpointView() {
+    function loadEndpoint() {
       fetch('/api/dashboard/keys').then(function(r) { return r.json(); }).then(function(keys) {
-        var el = document.getElementById('api-keys-list');
+        var el = document.getElementById('list-keys');
         el.innerHTML = '';
+        document.getElementById('cnt-keys').textContent = (keys ? keys.length : 0) + ' keys';
         if (!keys || !keys.length) {
-          el.innerHTML = '<div class="text-gray-500">No API keys generated. Local requests are accepted directly.</div>';
+          el.innerHTML = '<div class="text-text-muted">No API keys required. Local requests are accepted directly.</div>';
           return;
         }
         keys.forEach(function(k) {
           var item = document.createElement('div');
-          item.className = 'p-2.5 rounded bg-bg/50 border border-border-subtle flex items-center justify-between';
+          item.className = 'p-3 rounded-lg bg-bg-alt border border-border flex items-center justify-between';
           item.innerHTML = '<div>' +
-              '<div class="text-white font-semibold">' + (k.name || 'API Key') + '</div>' +
-              '<div class="text-gray-400 text-[11px]">' + (k.key ? k.key.slice(0, 10) + '...' + k.key.slice(-4) : '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022') + '</div>' +
+              '<div class="text-text-main font-semibold">' + (k.name || 'Default Key') + '</div>' +
+              '<div class="text-text-muted text-[11px]">' + (k.key ? k.key.slice(0, 10) + '...' + k.key.slice(-4) : '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022') + '</div>' +
             '</div>' +
-            '<button onclick="copyText(\\'' + k.key + '\\')" class="text-xs text-gray-400 hover:text-white">Copy Key</button>';
+            '<button onclick="copyToClipboard(\\'' + k.key + '\\')" class="px-2.5 py-1 bg-surface hover:bg-surface-2 rounded text-xs text-text-main">Copy</button>';
           el.appendChild(item);
         });
       }).catch(console.error);
     }
 
-    function loadLogsView() {
+    function loadLogs() {
       fetch('/api/dashboard/logs?limit=80').then(function(r) { return r.json(); }).then(function(logs) {
-        var tbody = document.getElementById('logs-rows');
+        var tbody = document.getElementById('tbl-logs');
         tbody.innerHTML = '';
         (logs || []).forEach(function(l) {
           var tr = document.createElement('tr');
-          tr.className = 'hover:bg-white/[0.02]';
-          tr.innerHTML = '<td class="py-2 px-3 text-gray-400 text-[10px] whitespace-nowrap">' + (l.timestamp ? new Date(l.timestamp).toLocaleTimeString() : '-') + '</td>' +
-            '<td class="py-2 px-3 font-semibold text-white">' + (l.provider || '-') + '</td>' +
-            '<td class="py-2 px-3 text-cyan-300 truncate max-w-[220px]">' + (l.model || '-') + '</td>' +
-            '<td class="py-2 px-3 text-gray-300">' + fmtNum(l.promptTokens || 0) + ' / ' + fmtNum(l.completionTokens || 0) + '</td>' +
+          tr.className = 'hover:bg-surface-2/40';
+          tr.innerHTML = '<td class="py-2 px-3 text-text-muted text-[10px] whitespace-nowrap">' + (l.timestamp ? new Date(l.timestamp).toLocaleTimeString() : '-') + '</td>' +
+            '<td class="py-2 px-3 font-semibold text-text-main">' + (l.provider || '-') + '</td>' +
+            '<td class="py-2 px-3 text-[#ea7855] truncate max-w-[220px]">' + (l.model || '-') + '</td>' +
+            '<td class="py-2 px-3 text-text-muted">' + fmt(l.promptTokens || 0) + ' / ' + fmt(l.completionTokens || 0) + '</td>' +
             '<td class="py-2 px-3"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-950 text-emerald-400">' + (l.status || 'OK') + '</span></td>';
           tbody.appendChild(tr);
         });
       }).catch(console.error);
     }
 
-    function executePlayground() {
-      var btn = document.getElementById('pg-btn');
-      var lat = document.getElementById('pg-latency');
-      var out = document.getElementById('pg-output');
-      var model = document.getElementById('pg-model').value;
-      var protocol = document.getElementById('pg-protocol').value;
-      var system = document.getElementById('pg-system').value;
-      var prompt = document.getElementById('pg-prompt').value;
+    function runPlaygroundTest() {
+      var btn = document.getElementById('btn-pg-submit');
+      var lat = document.getElementById('txt-pg-latency');
+      var out = document.getElementById('txt-pg-output');
+      var model = document.getElementById('sel-pg-model').value;
+      var protocol = document.getElementById('sel-pg-proto').value;
+      var system = document.getElementById('txt-pg-system').value;
+      var prompt = document.getElementById('txt-pg-prompt').value;
 
       btn.disabled = true;
       lat.textContent = 'Streaming...';
@@ -53750,32 +53795,31 @@ var dashboard_default = `<!DOCTYPE html>
       });
     }
 
-    function copyText(text) {
+    function copyToClipboard(text) {
       navigator.clipboard.writeText(text);
       alert('Copied to clipboard: ' + text);
     }
 
-    function refreshAll() {
-      loadUsageData();
-      loadCatalogView();
+    function refreshData() {
+      loadEndpoint();
+      loadAccounts();
+      loadCatalog();
+      loadUsage();
     }
 
-    // Auto-detect current port in browser
+    // Auto-detect browser host and port
     if (typeof window !== 'undefined' && window.location.port) {
-      document.getElementById('sidebar-port').textContent = window.location.port;
+      document.getElementById('port-indicator').textContent = window.location.port;
       var base = window.location.protocol + '//' + window.location.hostname + ':' + window.location.port;
-      document.getElementById('cfg-openai-url').textContent = base + '/v1';
-      document.getElementById('cfg-claude-url').textContent = base + '/v1';
+      document.getElementById('lbl-openai-url').textContent = base + '/v1';
+      document.getElementById('lbl-claude-url').textContent = base + '/v1';
     }
 
-    // Initialize on page load
-    window.addEventListener('DOMContentLoaded', function() {
-      loadUsageData();
-      loadCatalogView();
-    });
-    // Fallback trigger if DOMContentLoaded already fired
-    loadUsageData();
-    loadCatalogView();
+    // Initial load
+    loadEndpoint();
+    loadAccounts();
+    loadCatalog();
+    loadUsage();
   </script>
 </body>
 </html>
