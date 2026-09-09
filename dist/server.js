@@ -20184,7 +20184,7 @@ var init_package = __esm({
   "package.json"() {
     package_default = {
       name: "9router-hono",
-      version: "0.2.1",
+      version: "0.2.2",
       description: "Ultra-fast headless Hono proxy engine for 9Router",
       type: "module",
       main: "dist/server.js",
@@ -52796,8 +52796,8 @@ function registerDashboardRoutes(app2) {
   });
 }
 
-// src/dashboardHtml.js
-var DASHBOARD_HTML = `<!DOCTYPE html>
+// src/dashboard.html
+var dashboard_default = `<!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
@@ -52840,7 +52840,7 @@ var DASHBOARD_HTML = `<!DOCTYPE html>
           }
         }
       }
-    }
+    };
   </script>
   <style>
     body {
@@ -52889,7 +52889,7 @@ var DASHBOARD_HTML = `<!DOCTYPE html>
   <!-- Mobile Sidebar Backdrop Overlay -->
   <div id="sidebar-overlay" onclick="toggleSidebar(false)" class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden hidden transition-opacity duration-300"></div>
 
-  <!-- Left Sidebar (Aligned with 9Router-fix style + Modern Touches) -->
+  <!-- Left Sidebar (Aligned with 9Router-fix style) -->
   <aside id="main-sidebar" class="fixed lg:static inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border-subtle bg-bg-subtle backdrop-blur-xl transition-transform duration-300 -translate-x-full lg:translate-x-0">
     
     <!-- Mac-style Traffic lights & App header -->
@@ -52912,7 +52912,7 @@ var DASHBOARD_HTML = `<!DOCTYPE html>
         <div>
           <div class="flex items-center gap-1.5">
             <span class="font-bold text-sm text-white tracking-tight">9Router Hono</span>
-            <span class="px-1.5 py-0.5 text-[9px] font-mono font-bold rounded bg-cyan-950 text-cyan-400 border border-cyan-800/40">v0.2.0</span>
+            <span class="px-1.5 py-0.5 text-[9px] font-mono font-bold rounded bg-cyan-950 text-cyan-400 border border-cyan-800/40">v0.2.2</span>
           </div>
           <span class="text-[11px] text-gray-400 font-mono flex items-center gap-1">
             <span class="size-1.5 rounded-full bg-emerald-400 animate-subms"></span>
@@ -52982,7 +52982,7 @@ var DASHBOARD_HTML = `<!DOCTYPE html>
 
     </div>
 
-    <!-- Footer Local Storage indicator (Matches 9Router style) -->
+    <!-- Footer Local Storage indicator -->
     <div class="p-3 border-t border-border-subtle bg-bg-card/50">
       <div class="flex items-center justify-between text-xs text-gray-400 px-2 py-1">
         <div class="flex items-center gap-2">
@@ -52999,7 +52999,6 @@ var DASHBOARD_HTML = `<!DOCTYPE html>
 
   <!-- Main Content Wrapper -->
   <div class="flex-1 flex flex-col min-w-0 h-full relative isolate">
-    <!-- Faint background pattern -->
     <div class="landing-grid absolute inset-0 pointer-events-none -z-10" aria-hidden="true"></div>
 
     <!-- Top Navigation Bar -->
@@ -53031,12 +53030,8 @@ var DASHBOARD_HTML = `<!DOCTYPE html>
     <main class="flex-1 overflow-y-auto custom-scrollbar p-4 lg:p-8">
       <div class="max-w-7xl mx-auto space-y-6">
 
-        <!-- ======================================================== -->
-        <!-- VIEW 1: USAGE & ANALYTICS (Matches 9router-fix usage)   -->
-        <!-- ======================================================== -->
+        <!-- VIEW 1: USAGE & ANALYTICS -->
         <div id="view-usage" class="view-panel space-y-6">
-          
-          <!-- Metric Cards -->
           <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
             <div class="bg-bg-card border border-border-subtle rounded-xl p-4 shadow-sm relative overflow-hidden">
               <div class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1 flex items-center justify-between">
@@ -53083,7 +53078,7 @@ var DASHBOARD_HTML = `<!DOCTYPE html>
             </div>
           </div>
 
-          <!-- Usage Timeline Chart Card -->
+          <!-- Timeline Chart -->
           <div class="bg-bg-card border border-border-subtle rounded-xl p-5 shadow-sm">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
               <div>
@@ -53093,7 +53088,6 @@ var DASHBOARD_HTML = `<!DOCTYPE html>
                 <p class="text-xs text-gray-400">Daily token volume recorded in SQLite ledger</p>
               </div>
 
-              <!-- Period Filter Buttons (Includes All-Time) -->
               <div class="inline-flex bg-bg-subtle p-1 rounded-lg border border-border-subtle">
                 <button onclick="selectPeriod('today')" id="p-today" class="period-tab px-3 py-1 text-xs font-medium rounded-md text-gray-400 hover:text-white transition-all">Today</button>
                 <button onclick="selectPeriod('7d')" id="p-7d" class="period-tab px-3 py-1 text-xs font-medium rounded-md text-gray-400 hover:text-white transition-all">7D</button>
@@ -53110,34 +53104,25 @@ var DASHBOARD_HTML = `<!DOCTYPE html>
 
           <!-- Top Models & Provider Breakdown -->
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Top Models -->
             <div class="bg-bg-card border border-border-subtle rounded-xl p-5 shadow-sm">
               <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3 flex items-center justify-between">
                 <span>Top Models by Requests</span>
                 <span class="text-[10px] text-cyan-400 font-mono font-normal">Active Breakdown</span>
               </h3>
-              <div id="top-models-container" class="space-y-2.5 max-h-80 overflow-y-auto custom-scrollbar pr-1">
-                <!-- Dynamically filled -->
-              </div>
+              <div id="top-models-container" class="space-y-2.5 max-h-80 overflow-y-auto custom-scrollbar pr-1"></div>
             </div>
 
-            <!-- Provider Matrix -->
             <div class="bg-bg-card border border-border-subtle rounded-xl p-5 shadow-sm">
               <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3 flex items-center justify-between">
                 <span>Provider Accounts Breakdown</span>
                 <span class="text-[10px] text-emerald-400 font-mono font-normal">Health Pool</span>
               </h3>
-              <div id="provider-matrix-container" class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-80 overflow-y-auto custom-scrollbar pr-1">
-                <!-- Dynamically filled -->
-              </div>
+              <div id="provider-matrix-container" class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-80 overflow-y-auto custom-scrollbar pr-1"></div>
             </div>
           </div>
-
         </div>
 
-        <!-- ======================================================== -->
-        <!-- VIEW 2: PROVIDERS & ACCOUNTS (Full accounts list)       -->
-        <!-- ======================================================== -->
+        <!-- VIEW 2: PROVIDERS & ACCOUNTS -->
         <div id="view-providers" class="view-panel hidden space-y-4">
           <div class="bg-bg-card border border-border-subtle rounded-xl p-5 shadow-sm">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
@@ -53162,17 +53147,13 @@ var DASHBOARD_HTML = `<!DOCTYPE html>
                     <th class="py-2.5 px-3">Account ID</th>
                   </tr>
                 </thead>
-                <tbody id="accounts-rows" class="divide-y divide-border-subtle font-mono">
-                  <!-- Dynamically rendered -->
-                </tbody>
+                <tbody id="accounts-rows" class="divide-y divide-border-subtle font-mono"></tbody>
               </table>
             </div>
           </div>
         </div>
 
-        <!-- ======================================================== -->
-        <!-- VIEW 3: ENDPOINT & KEYS (Guides for Claude Code / Cursor)-->
-        <!-- ======================================================== -->
+        <!-- VIEW 3: ENDPOINT & KEYS -->
         <div id="view-endpoint" class="view-panel hidden space-y-6">
           <div class="bg-bg-card border border-border-subtle rounded-xl p-5 shadow-sm space-y-5">
             <div>
@@ -53198,69 +53179,48 @@ var DASHBOARD_HTML = `<!DOCTYPE html>
               </div>
             </div>
 
-            <!-- Quick Snippets -->
             <div class="space-y-3">
               <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400">Integration Commands</h3>
-              
               <div class="bg-bg-subtle p-3 rounded-lg border border-border-subtle space-y-1.5 font-mono text-xs">
                 <div class="text-[11px] text-cyan-400 font-bold">Claude Code CLI Integration:</div>
-                <div class="text-gray-300 bg-bg/60 p-2 rounded overflow-x-auto">
-                  ANTHROPIC_BASE_URL="http://localhost:20129" claude
-                </div>
+                <div class="text-gray-300 bg-bg/60 p-2 rounded overflow-x-auto">ANTHROPIC_BASE_URL="http://localhost:20129" claude</div>
               </div>
-
               <div class="bg-bg-subtle p-3 rounded-lg border border-border-subtle space-y-1.5 font-mono text-xs">
                 <div class="text-[11px] text-emerald-400 font-bold">Cursor / Aider / OpenAI SDK:</div>
-                <div class="text-gray-300 bg-bg/60 p-2 rounded overflow-x-auto">
-                  OPENAI_BASE_URL="http://localhost:20129/v1" OPENAI_API_KEY="sk-any-key"
-                </div>
+                <div class="text-gray-300 bg-bg/60 p-2 rounded overflow-x-auto">OPENAI_BASE_URL="http://localhost:20129/v1" OPENAI_API_KEY="sk-any-key"</div>
               </div>
             </div>
 
-            <!-- API Keys Section -->
             <div class="pt-3 border-t border-border-subtle">
               <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">Registered API Keys</h3>
-              <div id="api-keys-list" class="space-y-2 font-mono text-xs">
-                <!-- Dynamically filled -->
-              </div>
+              <div id="api-keys-list" class="space-y-2 font-mono text-xs"></div>
             </div>
           </div>
         </div>
 
-        <!-- ======================================================== -->
-        <!-- VIEW 4: COMBOS & VISION ADAPTERS                         -->
-        <!-- ======================================================== -->
+        <!-- VIEW 4: COMBOS -->
         <div id="view-combos" class="view-panel hidden space-y-4">
           <div class="bg-bg-card border border-border-subtle rounded-xl p-5 shadow-sm space-y-4">
             <div>
               <h2 class="text-base font-bold text-white tracking-tight">Combos & Vision Adapter</h2>
               <p class="text-xs text-gray-400">Multi-model fallback arrays and capacity-based auto routing</p>
             </div>
-            <div id="combos-list" class="space-y-3">
-              <!-- Dynamically populated -->
-            </div>
+            <div id="combos-list" class="space-y-3"></div>
           </div>
         </div>
 
-        <!-- ======================================================== -->
-        <!-- VIEW 5: TOKEN SAVER & COMPRESSION                       -->
-        <!-- ======================================================== -->
+        <!-- VIEW 5: TOKEN SAVER -->
         <div id="view-tokensaver" class="view-panel hidden space-y-4">
           <div class="bg-bg-card border border-border-subtle rounded-xl p-5 shadow-sm space-y-4">
             <div>
               <h2 class="text-base font-bold text-white tracking-tight">Token Saver & Optimization Engine</h2>
               <p class="text-xs text-gray-400">Built-in RTK compression, Undici keep-alive, and latency reduction features</p>
             </div>
-
-            <div id="tokensaver-features" class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
-              <!-- Dynamically populated -->
-            </div>
+            <div id="tokensaver-features" class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono"></div>
           </div>
         </div>
 
-        <!-- ======================================================== -->
-        <!-- VIEW 6: PLAYGROUND (Interactive live testing)           -->
-        <!-- ======================================================== -->
+        <!-- VIEW 6: PLAYGROUND -->
         <div id="view-playground" class="view-panel hidden space-y-4">
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="bg-bg-card border border-border-subtle rounded-xl p-5 space-y-4">
@@ -53315,9 +53275,7 @@ var DASHBOARD_HTML = `<!DOCTYPE html>
           </div>
         </div>
 
-        <!-- ======================================================== -->
-        <!-- VIEW 7: MODEL CATALOG                                    -->
-        <!-- ======================================================== -->
+        <!-- VIEW 7: MODEL CATALOG -->
         <div id="view-catalog" class="view-panel hidden space-y-4">
           <div class="bg-bg-card border border-border-subtle rounded-xl p-5 shadow-sm space-y-4">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
@@ -53327,16 +53285,11 @@ var DASHBOARD_HTML = `<!DOCTYPE html>
               </div>
               <input type="text" id="catalog-search" oninput="searchCatalog()" placeholder="Search model name..." class="w-full sm:w-64 bg-bg-subtle border border-border-subtle rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-brand-500 font-mono">
             </div>
-
-            <div id="catalog-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[600px] overflow-y-auto custom-scrollbar pr-1">
-              <!-- Dynamically populated -->
-            </div>
+            <div id="catalog-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[600px] overflow-y-auto custom-scrollbar pr-1"></div>
           </div>
         </div>
 
-        <!-- ======================================================== -->
-        <!-- VIEW 8: CONSOLE LOGS                                     -->
-        <!-- ======================================================== -->
+        <!-- VIEW 8: CONSOLE LOGS -->
         <div id="view-logs" class="view-panel hidden space-y-4">
           <div class="bg-bg-card border border-border-subtle rounded-xl p-5 shadow-sm space-y-4">
             <div class="flex items-center justify-between">
@@ -53358,9 +53311,7 @@ var DASHBOARD_HTML = `<!DOCTYPE html>
                     <th class="py-2.5 px-3">Status</th>
                   </tr>
                 </thead>
-                <tbody id="logs-rows" class="divide-y divide-border-subtle font-mono">
-                  <!-- Dynamically populated -->
-                </tbody>
+                <tbody id="logs-rows" class="divide-y divide-border-subtle font-mono"></tbody>
               </table>
             </div>
           </div>
@@ -53371,14 +53322,14 @@ var DASHBOARD_HTML = `<!DOCTYPE html>
   </div>
 
   <script>
-    let globalChart = null;
-    let currentPeriod = 'all';
-    let accountsData = [];
-    let catalogData = [];
+    var globalChart = null;
+    var currentPeriod = 'all';
+    var accountsData = [];
+    var catalogData = [];
 
     function toggleSidebar(open) {
-      const sidebar = document.getElementById('main-sidebar');
-      const overlay = document.getElementById('sidebar-overlay');
+      var sidebar = document.getElementById('main-sidebar');
+      var overlay = document.getElementById('sidebar-overlay');
       if (open) {
         sidebar.classList.remove('-translate-x-full');
         overlay.classList.remove('hidden');
@@ -53389,15 +53340,22 @@ var DASHBOARD_HTML = `<!DOCTYPE html>
     }
 
     function navigate(viewKey) {
-      document.querySelectorAll('.view-panel').forEach(el => el.classList.add('hidden'));
-      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      var panels = document.querySelectorAll('.view-panel');
+      for (var i = 0; i < panels.length; i++) {
+        panels[i].classList.add('hidden');
+      }
 
-      const targetView = document.getElementById('view-' + viewKey);
-      const targetNav = document.getElementById('nav-' + viewKey);
+      var navs = document.querySelectorAll('.nav-item');
+      for (var j = 0; j < navs.length; j++) {
+        navs[j].classList.remove('active');
+      }
+
+      var targetView = document.getElementById('view-' + viewKey);
+      var targetNav = document.getElementById('nav-' + viewKey);
       if (targetView) targetView.classList.remove('hidden');
       if (targetNav) targetNav.classList.add('active');
 
-      const titles = {
+      var titles = {
         usage: 'Usage & Analytics',
         providers: 'Providers & Accounts',
         endpoint: 'Endpoint & Keys',
@@ -53429,8 +53387,10 @@ var DASHBOARD_HTML = `<!DOCTYPE html>
 
     function selectPeriod(p) {
       currentPeriod = p;
-      ['today', '7d', '30d', '60d', 'all'].forEach(k => {
-        const btn = document.getElementById('p-' + k);
+      var periods = ['today', '7d', '30d', '60d', 'all'];
+      for (var i = 0; i < periods.length; i++) {
+        var k = periods[i];
+        var btn = document.getElementById('p-' + k);
         if (btn) {
           if (k === p) {
             btn.className = 'period-tab px-3 py-1 text-xs font-semibold rounded-md bg-brand-500 text-black shadow-sm transition-all';
@@ -53438,98 +53398,99 @@ var DASHBOARD_HTML = `<!DOCTYPE html>
             btn.className = 'period-tab px-3 py-1 text-xs font-medium rounded-md text-gray-400 hover:text-white transition-all';
           }
         }
-      });
+      }
       loadUsageData();
     }
 
-    async function loadUsageData() {
-      try {
-        const [statsRes, chartRes] = await Promise.all([
-          fetch('/api/dashboard/stats?period=' + currentPeriod).then(r => r.json()),
-          fetch('/api/dashboard/chart?period=' + currentPeriod).then(r => r.json())
-        ]);
+    function loadUsageData() {
+      Promise.all([
+        fetch('/api/dashboard/stats?period=' + currentPeriod).then(function(r) { return r.json(); }),
+        fetch('/api/dashboard/chart?period=' + currentPeriod).then(function(r) { return r.json(); })
+      ]).then(function(results) {
+        var statsRes = results[0];
+        var chartRes = results[1];
 
-        if (statsRes.stats) {
-          const s = statsRes.stats;
-          const totalPrompt = s.totalPromptTokens || 0;
-          const totalComp = s.totalCompletionTokens || 0;
-          const totalCached = s.totalCachedTokens || 0;
-          const grandTotal = totalPrompt + totalComp + totalCached;
+        if (statsRes && statsRes.stats) {
+          var s = statsRes.stats;
+          var totalPrompt = s.totalPromptTokens || 0;
+          var totalComp = s.totalCompletionTokens || 0;
+          var totalCached = s.totalCachedTokens || 0;
+          var grandTotal = totalPrompt + totalComp + totalCached;
 
           document.getElementById('u-total-tokens').textContent = fmtNum(grandTotal);
           document.getElementById('u-prompt-tokens').textContent = fmtNum(totalPrompt);
           document.getElementById('u-comp-tokens').textContent = fmtNum(totalComp);
           document.getElementById('u-total-requests').textContent = (s.totalRequests || 0).toLocaleString();
           document.getElementById('u-total-cost').textContent = '$' + (s.totalCost || 0).toFixed(2);
-          document.getElementById('u-accounts-count').textContent = statsRes.meta?.totalAccounts || 0;
-          document.getElementById('nav-badge-accounts').textContent = statsRes.meta?.totalAccounts || 0;
+          document.getElementById('u-accounts-count').textContent = statsRes.meta ? (statsRes.meta.totalAccounts || 0) : 0;
+          document.getElementById('nav-badge-accounts').textContent = statsRes.meta ? (statsRes.meta.totalAccounts || 0) : 0;
 
           // Render top models
-          const modelsEl = document.getElementById('top-models-container');
+          var modelsEl = document.getElementById('top-models-container');
           modelsEl.innerHTML = '';
-          const sortedModels = Object.entries(s.byModel || {})
-            .sort((a, b) => (b[1].requests || 0) - (a[1].requests || 0))
+          var sortedModels = Object.entries(s.byModel || {})
+            .sort(function(a, b) { return (b[1].requests || 0) - (a[1].requests || 0); })
             .slice(0, 10);
 
-          sortedModels.forEach(([key, m], idx) => {
-            const row = document.createElement('div');
+          sortedModels.forEach(function(item, idx) {
+            var key = item[0];
+            var m = item[1];
+            var row = document.createElement('div');
             row.className = 'flex items-center justify-between p-2.5 rounded-lg bg-bg-subtle border border-border-subtle';
-            row.innerHTML = \`
-              <div class="flex items-center gap-2.5 min-w-0">
-                <span class="size-6 rounded bg-bg-elevated text-cyan-400 font-mono font-bold text-xs flex items-center justify-center flex-shrink-0">\${idx + 1}</span>
-                <div class="truncate">
-                  <div class="text-xs font-semibold text-white truncate">\${m.rawModel || key}</div>
-                  <div class="text-[10px] text-gray-400">\${m.provider || 'default'}</div>
-                </div>
-              </div>
-              <div class="text-right font-mono text-xs flex-shrink-0">
-                <div class="font-bold text-cyan-300">\${fmtNum(m.requests)} reqs</div>
-                <div class="text-[10px] text-gray-400">\${fmtNum((m.promptTokens || 0) + (m.completionTokens || 0))} tokens</div>
-              </div>
-            \`;
+            row.innerHTML = '<div class="flex items-center gap-2.5 min-w-0">' +
+              '<span class="size-6 rounded bg-bg-elevated text-cyan-400 font-mono font-bold text-xs flex items-center justify-center flex-shrink-0">' + (idx + 1) + '</span>' +
+              '<div class="truncate">' +
+                '<div class="text-xs font-semibold text-white truncate">' + (m.rawModel || key) + '</div>' +
+                '<div class="text-[10px] text-gray-400">' + (m.provider || 'default') + '</div>' +
+              '</div>' +
+            '</div>' +
+            '<div class="text-right font-mono text-xs flex-shrink-0">' +
+              '<div class="font-bold text-cyan-300">' + fmtNum(m.requests) + ' reqs</div>' +
+              '<div class="text-[10px] text-gray-400">' + fmtNum((m.promptTokens || 0) + (m.completionTokens || 0)) + ' tokens</div>' +
+            '</div>';
             modelsEl.appendChild(row);
           });
 
           // Render provider matrix
-          const provEl = document.getElementById('provider-matrix-container');
+          var provEl = document.getElementById('provider-matrix-container');
           provEl.innerHTML = '';
-          const provs = statsRes.meta?.providers || {};
-          Object.entries(provs).sort((a, b) => b[1] - a[1]).forEach(([prov, cnt]) => {
-            const card = document.createElement('div');
+          var provs = statsRes.meta ? (statsRes.meta.providers || {}) : {};
+          Object.entries(provs).sort(function(a, b) { return b[1] - a[1]; }).forEach(function(pitem) {
+            var prov = pitem[0];
+            var cnt = pitem[1];
+            var card = document.createElement('div');
             card.className = 'p-3 rounded-lg bg-bg-subtle border border-border-subtle flex flex-col justify-between';
-            card.innerHTML = \`
-              <span class="text-[11px] font-bold text-gray-300 truncate uppercase tracking-wider">\${prov}</span>
-              <div class="mt-2 flex items-baseline justify-between">
-                <span class="text-base font-bold font-mono text-cyan-400">\${cnt}</span>
-                <span class="text-[10px] text-gray-500 font-mono">accounts</span>
-              </div>
-            \`;
+            card.innerHTML = '<span class="text-[11px] font-bold text-gray-300 truncate uppercase tracking-wider">' + prov + '</span>' +
+              '<div class="mt-2 flex items-baseline justify-between">' +
+                '<span class="text-base font-bold font-mono text-cyan-400">' + cnt + '</span>' +
+                '<span class="text-[10px] text-gray-500 font-mono">accounts</span>' +
+              '</div>';
             provEl.appendChild(card);
           });
         }
 
         renderUsageChart(chartRes);
-      } catch (err) {
+      }).catch(function(err) {
         console.error("Usage load error:", err);
-      }
+      });
     }
 
     function renderUsageChart(chartData) {
       if (!Array.isArray(chartData) || !chartData.length) return;
-      const ctx = document.getElementById('mainChart').getContext('2d');
+      var ctx = document.getElementById('mainChart').getContext('2d');
       if (globalChart) globalChart.destroy();
 
-      const labels = chartData.map(d => d.label);
-      const tokens = chartData.map(d => d.tokens || 0);
+      var labels = chartData.map(function(d) { return d.label; });
+      var tokens = chartData.map(function(d) { return d.tokens || 0; });
 
-      const gradient = ctx.createLinearGradient(0, 0, 0, 260);
+      var gradient = ctx.createLinearGradient(0, 0, 0, 260);
       gradient.addColorStop(0, 'rgba(6, 182, 212, 0.4)');
       gradient.addColorStop(1, 'rgba(6, 182, 212, 0.0)');
 
       globalChart = new Chart(ctx, {
         type: 'line',
         data: {
-          labels,
+          labels: labels,
           datasets: [{
             label: 'Tokens',
             data: tokens,
@@ -53556,7 +53517,7 @@ var DASHBOARD_HTML = `<!DOCTYPE html>
               padding: 10,
               displayColors: false,
               callbacks: {
-                label: (c) => 'Tokens: ' + c.raw.toLocaleString()
+                label: function(c) { return 'Tokens: ' + c.raw.toLocaleString(); }
               }
             }
           },
@@ -53570,7 +53531,7 @@ var DASHBOARD_HTML = `<!DOCTYPE html>
               ticks: {
                 color: '#71717a',
                 font: { size: 10, family: 'JetBrains Mono' },
-                callback: (v) => fmtNum(v)
+                callback: function(v) { return fmtNum(v); }
               }
             }
           }
@@ -53578,127 +53539,107 @@ var DASHBOARD_HTML = `<!DOCTYPE html>
       });
     }
 
-    async function loadAccountsView() {
-      try {
-        const res = await fetch('/api/dashboard/accounts');
-        accountsData = await res.json();
+    function loadAccountsView() {
+      fetch('/api/dashboard/accounts').then(function(r) { return r.json(); }).then(function(data) {
+        accountsData = data || [];
         renderAccountsTable(accountsData);
-      } catch (err) {
-        console.error(err);
-      }
+      }).catch(console.error);
     }
 
     function renderAccountsTable(list) {
-      const tbody = document.getElementById('accounts-rows');
+      var tbody = document.getElementById('accounts-rows');
       tbody.innerHTML = '';
-      list.forEach(a => {
-        const tr = document.createElement('tr');
+      list.forEach(function(a) {
+        var tr = document.createElement('tr');
         tr.className = 'hover:bg-white/[0.02] transition-colors';
-        tr.innerHTML = \`
-          <td class="py-2.5 px-3 font-semibold text-white">\${a.provider}</td>
-          <td class="py-2.5 px-3 text-cyan-300 font-sans truncate max-w-[200px]">\${a.name || a.email}</td>
-          <td class="py-2.5 px-3 text-gray-400 uppercase text-[10px]">\${a.authType}</td>
-          <td class="py-2.5 px-3">
-            <span class="px-2 py-0.5 rounded text-[10px] font-bold \${a.isActive ? 'bg-emerald-950 text-emerald-400 border border-emerald-800/50' : 'bg-rose-950 text-rose-400 border border-rose-800/50'}">
-              \${a.isActive ? 'Active' : 'Disabled'}
-            </span>
-          </td>
-          <td class="py-2.5 px-3 text-gray-400">\${a.priority}</td>
-          <td class="py-2.5 px-3 text-gray-500 text-[10px] truncate max-w-[120px]">\${a.id}</td>
-        \`;
+        tr.innerHTML = '<td class="py-2.5 px-3 font-semibold text-white">' + (a.provider || '-') + '</td>' +
+          '<td class="py-2.5 px-3 text-cyan-300 font-sans truncate max-w-[200px]">' + (a.name || a.email || '-') + '</td>' +
+          '<td class="py-2.5 px-3 text-gray-400 uppercase text-[10px]">' + (a.authType || '-') + '</td>' +
+          '<td class="py-2.5 px-3">' +
+            '<span class="px-2 py-0.5 rounded text-[10px] font-bold ' + (a.isActive ? 'bg-emerald-950 text-emerald-400 border border-emerald-800/50' : 'bg-rose-950 text-rose-400 border border-rose-800/50') + '">' +
+              (a.isActive ? 'Active' : 'Disabled') +
+            '</span>' +
+          '</td>' +
+          '<td class="py-2.5 px-3 text-gray-400">' + (a.priority || 0) + '</td>' +
+          '<td class="py-2.5 px-3 text-gray-500 text-[10px] truncate max-w-[120px]">' + (a.id || '-') + '</td>';
         tbody.appendChild(tr);
       });
     }
 
     function searchAccounts() {
-      const q = document.getElementById('filter-acc-input').value.toLowerCase();
-      const filtered = accountsData.filter(a =>
-        (a.name || '').toLowerCase().includes(q) ||
-        (a.email || '').toLowerCase().includes(q) ||
-        (a.provider || '').toLowerCase().includes(q)
-      );
+      var q = document.getElementById('filter-acc-input').value.toLowerCase();
+      var filtered = accountsData.filter(function(a) {
+        return (a.name || '').toLowerCase().indexOf(q) !== -1 ||
+          (a.email || '').toLowerCase().indexOf(q) !== -1 ||
+          (a.provider || '').toLowerCase().indexOf(q) !== -1;
+      });
       renderAccountsTable(filtered);
     }
 
-    async function loadCatalogView() {
-      try {
-        const res = await fetch('/api/dashboard/models');
-        const data = await res.json();
+    function loadCatalogView() {
+      fetch('/api/dashboard/models').then(function(r) { return r.json(); }).then(function(data) {
         catalogData = data.models || [];
         document.getElementById('nav-badge-models').textContent = catalogData.length;
         renderCatalogCards(catalogData);
 
-        // Populate playground select
-        const sel = document.getElementById('pg-model');
+        var sel = document.getElementById('pg-model');
         sel.innerHTML = '';
-        catalogData.forEach(m => {
-          const opt = document.createElement('option');
+        catalogData.forEach(function(m) {
+          var opt = document.createElement('option');
           opt.value = m.id;
           opt.textContent = m.id + (m.owned_by ? ' (' + m.owned_by + ')' : '');
           sel.appendChild(opt);
         });
-      } catch (err) {
-        console.error(err);
-      }
+      }).catch(console.error);
     }
 
     function renderCatalogCards(models) {
-      const container = document.getElementById('catalog-cards-container');
+      var container = document.getElementById('catalog-cards-container');
       container.innerHTML = '';
-      models.forEach(m => {
-        const card = document.createElement('div');
+      models.forEach(function(m) {
+        var card = document.createElement('div');
         card.className = 'p-3.5 rounded-lg bg-bg-subtle border border-border-subtle flex flex-col justify-between';
-        card.innerHTML = \`
-          <div>
-            <div class="text-xs font-bold text-white font-mono break-all">\${m.id}</div>
-            <div class="text-[10px] text-cyan-400 mt-1 uppercase font-mono">\${m.owned_by || '9router'}</div>
-          </div>
-          <div class="mt-3 flex items-center justify-between text-[10px] text-gray-400 pt-2 border-t border-border-subtle">
-            <span>Context: \${m.context_length ? fmtNum(m.context_length) : 'N/A'}</span>
-            <button onclick="copyText('\${m.id}')" class="text-xs text-gray-400 hover:text-white">Copy</button>
-          </div>
-        \`;
+        card.innerHTML = '<div>' +
+            '<div class="text-xs font-bold text-white font-mono break-all">' + m.id + '</div>' +
+            '<div class="text-[10px] text-cyan-400 mt-1 uppercase font-mono">' + (m.owned_by || '9router') + '</div>' +
+          '</div>' +
+          '<div class="mt-3 flex items-center justify-between text-[10px] text-gray-400 pt-2 border-t border-border-subtle">' +
+            '<span>Context: ' + (m.context_length ? fmtNum(m.context_length) : 'N/A') + '</span>' +
+            '<button onclick="copyText(\\'' + m.id + '\\')" class="text-xs text-gray-400 hover:text-white">Copy</button>' +
+          '</div>';
         container.appendChild(card);
       });
     }
 
     function searchCatalog() {
-      const q = document.getElementById('catalog-search').value.toLowerCase();
-      renderCatalogCards(catalogData.filter(m => m.id.toLowerCase().includes(q)));
+      var q = document.getElementById('catalog-search').value.toLowerCase();
+      renderCatalogCards(catalogData.filter(function(m) { return m.id.toLowerCase().indexOf(q) !== -1; }));
     }
 
-    async function loadCombosView() {
-      try {
-        const res = await fetch('/api/dashboard/combos');
-        const combos = await res.json();
-        const el = document.getElementById('combos-list');
+    function loadCombosView() {
+      fetch('/api/dashboard/combos').then(function(r) { return r.json(); }).then(function(combos) {
+        var el = document.getElementById('combos-list');
         el.innerHTML = '';
-        if (!combos.length) {
+        if (!combos || !combos.length) {
           el.innerHTML = '<div class="text-xs text-gray-400 font-mono">No custom combos configured.</div>';
           return;
         }
-        combos.forEach(c => {
-          const item = document.createElement('div');
+        combos.forEach(function(c) {
+          var item = document.createElement('div');
           item.className = 'p-3 rounded-lg bg-bg-subtle border border-border-subtle font-mono text-xs';
-          item.innerHTML = \`
-            <div class="font-bold text-white mb-1">\${c.name}</div>
-            <div class="text-[11px] text-gray-400">Models: \${(c.models || []).join(' \u2192 ')}</div>
-          \`;
+          item.innerHTML = '<div class="font-bold text-white mb-1">' + c.name + '</div>' +
+            '<div class="text-[11px] text-gray-400">Models: ' + (c.models || []).join(' \u2192 ') + '</div>';
           el.appendChild(item);
         });
-      } catch (err) {
-        console.error(err);
-      }
+      }).catch(console.error);
     }
 
-    async function loadTokenSaverView() {
-      try {
-        const res = await fetch('/api/dashboard/settings');
-        const settings = await res.json();
-        const el = document.getElementById('tokensaver-features');
+    function loadTokenSaverView() {
+      fetch('/api/dashboard/settings').then(function(r) { return r.json(); }).then(function(settings) {
+        var el = document.getElementById('tokensaver-features');
         el.innerHTML = '';
 
-        const features = [
+        var features = [
           { title: "RTK Token Saver", desc: "Compresses tool_result content in-place before upstream dispatch", active: !!settings.rtkEnabled },
           { title: "Undici Keep-Alive", desc: "Persistent TLS connection pool for all upstreams cutting 1-2s TCP handshake", active: true },
           { title: "Antigravity Image Direct", desc: "Direct route preserving image blocks without lossy OpenAI translation", active: true },
@@ -53707,119 +53648,105 @@ var DASHBOARD_HTML = `<!DOCTYPE html>
           { title: "Tool Args Sanitizer", desc: "Normalizes invalid JSON schema parameters for Claude Code models", active: true }
         ];
 
-        features.forEach(f => {
-          const card = document.createElement('div');
+        features.forEach(function(f) {
+          var card = document.createElement('div');
           card.className = 'p-3.5 rounded-lg bg-bg-subtle border border-border-subtle flex items-start justify-between gap-2';
-          card.innerHTML = \`
-            <div>
-              <div class="font-bold text-white">\${f.title}</div>
-              <div class="text-[10px] text-gray-400 mt-1 font-sans">\${f.desc}</div>
-            </div>
-            <span class="px-2 py-0.5 rounded text-[10px] font-bold \${f.active ? 'bg-emerald-950 text-emerald-400 border border-emerald-800/50' : 'bg-gray-800 text-gray-400'}">
-              \${f.active ? 'ENABLED' : 'OFF'}
-            </span>
-          \`;
+          card.innerHTML = '<div>' +
+              '<div class="font-bold text-white">' + f.title + '</div>' +
+              '<div class="text-[10px] text-gray-400 mt-1 font-sans">' + f.desc + '</div>' +
+            '</div>' +
+            '<span class="px-2 py-0.5 rounded text-[10px] font-bold ' + (f.active ? 'bg-emerald-950 text-emerald-400 border border-emerald-800/50' : 'bg-gray-800 text-gray-400') + '">' +
+              (f.active ? 'ENABLED' : 'OFF') +
+            '</span>';
           el.appendChild(card);
         });
-      } catch (err) {
-        console.error(err);
-      }
+      }).catch(console.error);
     }
 
-    async function loadEndpointView() {
-      try {
-        const res = await fetch('/api/dashboard/keys');
-        const keys = await res.json();
-        const el = document.getElementById('api-keys-list');
+    function loadEndpointView() {
+      fetch('/api/dashboard/keys').then(function(r) { return r.json(); }).then(function(keys) {
+        var el = document.getElementById('api-keys-list');
         el.innerHTML = '';
-        if (!keys.length) {
+        if (!keys || !keys.length) {
           el.innerHTML = '<div class="text-gray-500">No API keys generated. Local requests are accepted directly.</div>';
           return;
         }
-        keys.forEach(k => {
-          const item = document.createElement('div');
+        keys.forEach(function(k) {
+          var item = document.createElement('div');
           item.className = 'p-2.5 rounded bg-bg/50 border border-border-subtle flex items-center justify-between';
-          item.innerHTML = \`
-            <div>
-              <div class="text-white font-semibold">\${k.name || 'API Key'}</div>
-              <div class="text-gray-400 text-[11px]">\${k.key ? k.key.slice(0, 10) + '...' + k.key.slice(-4) : '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022'}</div>
-            </div>
-            <button onclick="copyText('\${k.key}')" class="text-xs text-gray-400 hover:text-white">Copy Key</button>
-          \`;
+          item.innerHTML = '<div>' +
+              '<div class="text-white font-semibold">' + (k.name || 'API Key') + '</div>' +
+              '<div class="text-gray-400 text-[11px]">' + (k.key ? k.key.slice(0, 10) + '...' + k.key.slice(-4) : '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022') + '</div>' +
+            '</div>' +
+            '<button onclick="copyText(\\'' + k.key + '\\')" class="text-xs text-gray-400 hover:text-white">Copy Key</button>';
           el.appendChild(item);
         });
-      } catch (err) {
-        console.error(err);
-      }
+      }).catch(console.error);
     }
 
-    async function loadLogsView() {
-      try {
-        const res = await fetch('/api/dashboard/logs?limit=80');
-        const logs = await res.json();
-        const tbody = document.getElementById('logs-rows');
+    function loadLogsView() {
+      fetch('/api/dashboard/logs?limit=80').then(function(r) { return r.json(); }).then(function(logs) {
+        var tbody = document.getElementById('logs-rows');
         tbody.innerHTML = '';
-        logs.forEach(l => {
-          const tr = document.createElement('tr');
+        (logs || []).forEach(function(l) {
+          var tr = document.createElement('tr');
           tr.className = 'hover:bg-white/[0.02]';
-          tr.innerHTML = \`
-            <td class="py-2 px-3 text-gray-400 text-[10px] whitespace-nowrap">\${l.timestamp ? new Date(l.timestamp).toLocaleTimeString() : '-'}</td>
-            <td class="py-2 px-3 font-semibold text-white">\${l.provider || '-'}</td>
-            <td class="py-2 px-3 text-cyan-300 truncate max-w-[220px]">\${l.model || '-'}</td>
-            <td class="py-2 px-3 text-gray-300">\${fmtNum(l.promptTokens || 0)} / \${fmtNum(l.completionTokens || 0)}</td>
-            <td class="py-2 px-3"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-950 text-emerald-400">\${l.status || 'OK'}</span></td>
-          \`;
+          tr.innerHTML = '<td class="py-2 px-3 text-gray-400 text-[10px] whitespace-nowrap">' + (l.timestamp ? new Date(l.timestamp).toLocaleTimeString() : '-') + '</td>' +
+            '<td class="py-2 px-3 font-semibold text-white">' + (l.provider || '-') + '</td>' +
+            '<td class="py-2 px-3 text-cyan-300 truncate max-w-[220px]">' + (l.model || '-') + '</td>' +
+            '<td class="py-2 px-3 text-gray-300">' + fmtNum(l.promptTokens || 0) + ' / ' + fmtNum(l.completionTokens || 0) + '</td>' +
+            '<td class="py-2 px-3"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-950 text-emerald-400">' + (l.status || 'OK') + '</span></td>';
           tbody.appendChild(tr);
         });
-      } catch (err) {
-        console.error(err);
-      }
+      }).catch(console.error);
     }
 
-    async function executePlayground() {
-      const btn = document.getElementById('pg-btn');
-      const lat = document.getElementById('pg-latency');
-      const out = document.getElementById('pg-output');
-      const model = document.getElementById('pg-model').value;
-      const protocol = document.getElementById('pg-protocol').value;
-      const system = document.getElementById('pg-system').value;
-      const prompt = document.getElementById('pg-prompt').value;
+    function executePlayground() {
+      var btn = document.getElementById('pg-btn');
+      var lat = document.getElementById('pg-latency');
+      var out = document.getElementById('pg-output');
+      var model = document.getElementById('pg-model').value;
+      var protocol = document.getElementById('pg-protocol').value;
+      var system = document.getElementById('pg-system').value;
+      var prompt = document.getElementById('pg-prompt').value;
 
       btn.disabled = true;
       lat.textContent = 'Streaming...';
       out.textContent = '';
 
-      let payload = {};
-      if (protocol.includes('messages')) {
-        payload = { model, max_tokens: 1024, system, messages: [{ role: 'user', content: prompt }] };
+      var payload = {};
+      if (protocol.indexOf('messages') !== -1) {
+        payload = { model: model, max_tokens: 1024, system: system, messages: [{ role: 'user', content: prompt }] };
       } else {
-        payload = { model, messages: [{ role: 'system', content: system }, { role: 'user', content: prompt }] };
+        payload = { model: model, messages: [{ role: 'system', content: system }, { role: 'user', content: prompt }] };
       }
 
-      const t0 = performance.now();
-      try {
-        const res = await fetch(protocol, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const elapsed = (performance.now() - t0).toFixed(1);
-        lat.textContent = \`HTTP \${res.status} (\${elapsed}ms)\`;
+      var t0 = performance.now();
+      fetch(protocol, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).then(function(res) {
+        var elapsed = (performance.now() - t0).toFixed(1);
+        lat.textContent = 'HTTP ' + res.status + ' (' + elapsed + 'ms)';
 
         if (!res.ok) {
-          out.textContent = 'Error:
-' + await res.text();
-          return;
+          return res.text().then(function(txt) {
+            out.textContent = 'Error: ' + txt;
+          });
         }
 
-        const data = await res.json();
-        out.textContent = data.choices?.[0]?.message?.content || data.content?.[0]?.text || JSON.stringify(data, null, 2);
-      } catch (err) {
+        return res.json().then(function(data) {
+          out.textContent = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) ||
+            (data.content && data.content[0] && data.content[0].text) ||
+            JSON.stringify(data, null, 2);
+        });
+      }).catch(function(err) {
         lat.textContent = 'Error';
         out.textContent = 'Fetch failed: ' + err.message;
-      } finally {
+      }).finally(function() {
         btn.disabled = false;
-      }
+      });
     }
 
     function copyText(text) {
@@ -53835,12 +53762,17 @@ var DASHBOARD_HTML = `<!DOCTYPE html>
     // Auto-detect current port in browser
     if (typeof window !== 'undefined' && window.location.port) {
       document.getElementById('sidebar-port').textContent = window.location.port;
-      const base = window.location.protocol + '//' + window.location.hostname + ':' + window.location.port;
+      var base = window.location.protocol + '//' + window.location.hostname + ':' + window.location.port;
       document.getElementById('cfg-openai-url').textContent = base + '/v1';
       document.getElementById('cfg-claude-url').textContent = base + '/v1';
     }
 
-    // Initialize
+    // Initialize on page load
+    window.addEventListener('DOMContentLoaded', function() {
+      loadUsageData();
+      loadCatalogView();
+    });
+    // Fallback trigger if DOMContentLoaded already fired
     loadUsageData();
     loadCatalogView();
   </script>
@@ -53878,12 +53810,12 @@ app.use("/v1/*", async (c, next) => {
 });
 registerDashboardRoutes(app);
 app.get("/dashboard", (c) => {
-  return c.html(DASHBOARD_HTML);
+  return c.html(dashboard_default);
 });
 app.get("/", (c) => {
   const accept = c.req.header("accept") || "";
   if (accept.includes("text/html")) {
-    return c.html(DASHBOARD_HTML);
+    return c.html(dashboard_default);
   }
   return c.json({
     name: "9router-hono",

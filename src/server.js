@@ -9,7 +9,7 @@ import { handleEmbeddings } from "./sse/handlers/embeddings.js";
 import { getSettings, getApiKeys, validateApiKey } from "./lib/localDb.js";
 import { buildModelsList } from "./modelsHandler.js";
 import { registerDashboardRoutes } from "./dashboardApi.js";
-import { DASHBOARD_HTML } from "./dashboardHtml.js";
+import DASHBOARD_HTML from "./dashboard.html";
 
 const app = new Hono();
 
