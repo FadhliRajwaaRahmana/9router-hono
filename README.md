@@ -5,6 +5,7 @@ Ultra-fast, headless, sub-millisecond LLM routing proxy for [9Router](https://gi
 ## Highlights
 
 - ⚡ **Ultra-low latency**: Hono RegExpRouter delivers routing decisions in **<0.5ms**, completely eliminating Next.js router & context overhead (~15-30ms).
+- 🎨 **Brand New Control Plane UI**: Gorgeous, futuristic, responsive glassmorphism dashboard (desktop + mobile navigation, interactive Chart.js throughput graph, accounts pool monitor, and interactive live playground).
 - 💾 **Seamless Shared Database**: Uses your existing 9router SQLite database (`~/.9router/db/data.sqlite`) — all 600+ accounts, nodes, and keys work instantly.
 - 🎯 **Full Protocol Compatibility**:
   - `/v1/chat/completions` (OpenAI format)

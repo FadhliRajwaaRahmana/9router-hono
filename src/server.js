@@ -8,6 +8,8 @@ import { handleFetch } from "./sse/handlers/fetch.js";
 import { handleEmbeddings } from "./sse/handlers/embeddings.js";
 import { getSettings, getApiKeys, validateApiKey } from "./lib/localDb.js";
 import { buildModelsList } from "./modelsHandler.js";
+import { registerDashboardRoutes } from "./dashboardApi.js";
+import { DASHBOARD_HTML } from "./dashboardHtml.js";
 
 const app = new Hono();
 
@@ -48,11 +50,24 @@ app.use("/v1/*", async (c, next) => {
 });
 
 // Root & Health Check
+// Register dashboard API endpoints
+registerDashboardRoutes(app);
+
+// Serve Modern Dashboard UI at /dashboard and root / (if browser accepts html)
+app.get("/dashboard", (c) => {
+  return c.html(DASHBOARD_HTML);
+});
+
 app.get("/", (c) => {
+  const accept = c.req.header("accept") || "";
+  if (accept.includes("text/html")) {
+    return c.html(DASHBOARD_HTML);
+  }
   return c.json({
     name: "9router-hono",
     status: "running",
     engine: "Hono (Ultra-Fast Proxy)",
+    dashboard: "/dashboard",
     endpoints: [
       "/v1/chat/completions",
       "/v1/messages",
