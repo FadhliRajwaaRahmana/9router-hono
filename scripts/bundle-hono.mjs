@@ -1,0 +1,36 @@
+import esbuild from "esbuild";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const root = path.resolve(__dirname, "..");
+
+console.log("Bundling honoGateway with esbuild...");
+
+await esbuild.build({
+  entryPoints: [path.join(root, "src/honoGateway.js")],
+  bundle: true,
+  platform: "node",
+  target: "node18",
+  format: "esm",
+  outfile: path.join(root, "dist/honoGateway.mjs"),
+  sourcemap: false,
+  alias: {
+    "@": path.join(root, "src"),
+    "open-sse": path.join(root, "open-sse"),
+  },
+  external: [
+    "better-sqlite3",
+    "sql.js",
+    "undici",
+    "hono",
+    "@hono/node-server",
+    "bun:sqlite",
+    "node:sqlite"
+  ],
+  banner: {
+    js: `import { createRequire as __createRequire } from "node:module";\nconst require = __createRequire(import.meta.url);`
+  }
+});
+
+console.log("✅ Bundled successfully into dist/honoGateway.mjs");

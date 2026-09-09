@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-import { startServer } from "../dist/server.js";
+const path = require("path");
+const fs = require("fs");
 
 const args = process.argv.slice(2);
 let port = 20129;
@@ -28,4 +29,11 @@ Options:
   }
 }
 
-startServer(port, host);
+process.env.PORT = String(port);
+process.env.HOSTNAME = host;
+
+const rootDir = path.resolve(__dirname, "..");
+process.chdir(rootDir);
+
+// Launch custom-server.js
+require(path.join(rootDir, "custom-server.js"));
