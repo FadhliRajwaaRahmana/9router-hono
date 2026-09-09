@@ -120,14 +120,17 @@ export default function Sidebar({ onClose }) {
         {/* Logo */}
         <div className="px-6 py-4 flex flex-col gap-2">
           <Link href="/dashboard" className="flex items-center gap-3">
-            <div className="flex items-center justify-center size-9 rounded-[10px] bg-gradient-to-br from-brand-500 to-brand-700 shadow-[var(--shadow-warm)]">
-              <span className="material-symbols-outlined text-white text-[20px]">hub</span>
+            <div className="flex items-center justify-center size-9 rounded-[10px] bg-gradient-to-br from-cyan-400 to-blue-600 shadow-[var(--shadow-warm)]">
+              <span className="material-symbols-outlined text-black text-[20px] font-bold">bolt</span>
             </div>
             <div className="flex flex-col">
               <h1 className="text-lg font-semibold tracking-tight text-text-main">
                 {APP_CONFIG.name}
               </h1>
-              <span className="text-xs text-text-muted">v{APP_CONFIG.version}</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-text-muted">v{APP_CONFIG.version}</span>
+                <span className="px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800/60 text-[9px] font-mono font-bold">HONO SUB-MS</span>
+              </div>
             </div>
           </Link>
           {updateInfo && (

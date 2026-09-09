@@ -32845,7 +32845,7 @@ var init_package = __esm({
   "package.json"() {
     package_default = {
       name: "9router-hono",
-      version: "0.3.1",
+      version: "0.3.2",
       description: "9Router local AI gateway + full original Next.js dashboard with Hono sub-millisecond fast-path engine",
       bin: {
         "9router-hono": "./bin/cli.js"
