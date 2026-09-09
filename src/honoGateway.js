@@ -5,10 +5,30 @@ import { handleFetch } from "@/sse/handlers/fetch.js";
 import { handleEmbeddings } from "@/sse/handlers/embeddings.js";
 import { initTranslators } from "open-sse/translator/index.js";
 import { buildModelsList } from "./modelsHandler.js";
+import { registerDashboardRoutes } from "./dashboardApi.js";
+import DASHBOARD_HTML from "./dashboard.html";
 
 await initTranslators();
 
 const honoApp = new Hono();
+
+// Register dashboard API routes for full interactivity
+registerDashboardRoutes(honoApp);
+
+// Match Dashboard HTML at /dashboard and / (for browsers)
+honoApp.get("/dashboard", (c) => c.html(DASHBOARD_HTML));
+honoApp.get("/", (c) => {
+  const accept = c.req.header("accept") || "";
+  if (accept.includes("text/html")) {
+    return c.html(DASHBOARD_HTML);
+  }
+  return c.json({
+    name: "9router-hono",
+    status: "running",
+    engine: "Hono (Sub-Millisecond Engine)",
+    dashboard: "/dashboard"
+  });
+});
 
 // Match LLM chat completions
 honoApp.post("/v1/chat/completions", async (c) => handleChat(c.req.raw));

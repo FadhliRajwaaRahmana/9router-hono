@@ -59,7 +59,14 @@ function isHonoFastPathCandidate(method, url) {
   const upperMethod = (method || "GET").toUpperCase();
 
   const pathname = url.split("?")[0];
-  if (pathname === "/v1/models" || pathname === "/api/v1/models" || pathname.startsWith("/v1/models/")) {
+  if (
+    pathname === "/dashboard" ||
+    pathname === "/" ||
+    pathname.startsWith("/api/dashboard/") ||
+    pathname === "/v1/models" ||
+    pathname === "/api/v1/models" ||
+    pathname.startsWith("/v1/models/")
+  ) {
     return true;
   }
 

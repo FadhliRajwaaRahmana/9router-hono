@@ -7,10 +7,16 @@ import {
   getProviderConnections,
   getProviderNodes,
   getApiKeys,
+  createApiKey,
+  deleteApiKey,
   getSettings,
+  updateSettings,
   getModelAliases,
   getCombos,
+  createCombo,
+  deleteCombo,
   getProxyPools,
+  updateProviderConnection,
 } from "./lib/localDb.js";
 import { buildModelsList } from "./modelsHandler.js";
 
@@ -100,6 +106,17 @@ export function registerDashboardRoutes(app) {
     }
   });
 
+  // Toggle account active status
+  app.post("/api/dashboard/accounts/toggle", async (c) => {
+    try {
+      const { id, isActive } = await c.req.json();
+      await updateProviderConnection(id, { isActive: isActive ? 1 : 0 });
+      return c.json({ success: true, id, isActive });
+    } catch (err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+
   // Models catalog
   app.get("/api/dashboard/models", async (c) => {
     try {
@@ -112,11 +129,34 @@ export function registerDashboardRoutes(app) {
     }
   });
 
-  // Combos list
+  // Combos list & management
   app.get("/api/dashboard/combos", async (c) => {
     try {
       const combos = await getCombos();
       return c.json(combos);
+    } catch (err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+
+  app.post("/api/dashboard/combos", async (c) => {
+    try {
+      const { name, models } = await c.req.json();
+      if (!name || !models || !models.length) {
+        return c.json({ error: "Name and models array are required" }, 400);
+      }
+      const newCombo = await createCombo({ name, models });
+      return c.json({ success: true, combo: newCombo });
+    } catch (err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+
+  app.delete("/api/dashboard/combos/:id", async (c) => {
+    try {
+      const id = c.req.param("id");
+      await deleteCombo(id);
+      return c.json({ success: true, id });
     } catch (err) {
       return c.json({ error: err.message }, 500);
     }
@@ -132,11 +172,42 @@ export function registerDashboardRoutes(app) {
     }
   });
 
+  app.post("/api/dashboard/settings", async (c) => {
+    try {
+      const body = await c.req.json();
+      await updateSettings(body);
+      const updated = await getSettings();
+      return c.json({ success: true, settings: updated });
+    } catch (err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+
   // API Keys
   app.get("/api/dashboard/keys", async (c) => {
     try {
       const keys = await getApiKeys();
       return c.json(keys);
+    } catch (err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+
+  app.post("/api/dashboard/keys", async (c) => {
+    try {
+      const { name } = await c.req.json();
+      const newKey = await createApiKey({ name: name || "API Key" });
+      return c.json({ success: true, key: newKey });
+    } catch (err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+
+  app.delete("/api/dashboard/keys/:id", async (c) => {
+    try {
+      const id = c.req.param("id");
+      await deleteApiKey(id);
+      return c.json({ success: true, id });
     } catch (err) {
       return c.json({ error: err.message }, 500);
     }

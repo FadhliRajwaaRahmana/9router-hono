@@ -19247,6 +19247,17 @@ var init_settingsRepo = __esm({
 });
 
 // src/lib/db/repos/connectionsRepo.js
+var connectionsRepo_exports = {};
+__export(connectionsRepo_exports, {
+  cleanupProviderConnections: () => cleanupProviderConnections,
+  createProviderConnection: () => createProviderConnection,
+  deleteProviderConnection: () => deleteProviderConnection,
+  deleteProviderConnectionsByProvider: () => deleteProviderConnectionsByProvider,
+  getProviderConnectionById: () => getProviderConnectionById,
+  getProviderConnections: () => getProviderConnections,
+  reorderProviderConnections: () => reorderProviderConnections,
+  updateProviderConnection: () => updateProviderConnection
+});
 function rowToConn(row) {
   if (!row) return null;
   const extra = parseJson(row.data, {});
@@ -19516,6 +19527,14 @@ var init_connectionsRepo = __esm({
 });
 
 // src/lib/db/repos/nodesRepo.js
+var nodesRepo_exports = {};
+__export(nodesRepo_exports, {
+  createProviderNode: () => createProviderNode,
+  deleteProviderNode: () => deleteProviderNode,
+  getProviderNodeById: () => getProviderNodeById,
+  getProviderNodes: () => getProviderNodes,
+  updateProviderNode: () => updateProviderNode
+});
 function rowToNode(row) {
   if (!row) return null;
   const extra = parseJson(row.data, {});
@@ -19776,6 +19795,15 @@ var init_apiKey = __esm({
 });
 
 // src/lib/db/repos/apiKeysRepo.js
+var apiKeysRepo_exports = {};
+__export(apiKeysRepo_exports, {
+  createApiKey: () => createApiKey,
+  deleteApiKey: () => deleteApiKey,
+  getApiKeyById: () => getApiKeyById,
+  getApiKeys: () => getApiKeys,
+  updateApiKey: () => updateApiKey,
+  validateApiKey: () => validateApiKey
+});
 function rowToKey(row) {
   if (!row) return null;
   return {
@@ -20146,6 +20174,11 @@ var init_disabledModelsRepo = __esm({
 
 // src/lib/db/repos/usageRepo.js
 import { EventEmitter } from "events";
+function maskApiKey(key) {
+  if (!key || typeof key !== "string") return null;
+  if (key.length <= 8) return key.charAt(0) + "***";
+  return key.slice(0, 8) + "***";
+}
 function scheduleStatsEvent(event, delayMs = 150) {
   const key = event === "update" ? "update" : "pending";
   if (statsEmitTimers[key]) return;
@@ -20334,9 +20367,445 @@ async function saveRequestUsage(entry) {
     console.error("Failed to save usage stats:", e);
   }
 }
+function loadDaysInRange(adapter, maxDays) {
+  if (maxDays == null) {
+    return adapter.all(`SELECT dateKey, data FROM usageDaily`);
+  }
+  const today = /* @__PURE__ */ new Date();
+  const cutoff = new Date(today.getFullYear(), today.getMonth(), today.getDate() - maxDays + 1);
+  const cutoffKey = `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, "0")}-${String(cutoff.getDate()).padStart(2, "0")}`;
+  return adapter.all(`SELECT dateKey, data FROM usageDaily WHERE dateKey >= ?`, [cutoffKey]);
+}
+async function getUsageStats(period = "all") {
+  const db = await getAdapter();
+  const [{ getProviderConnections: getProviderConnections2 }, { getApiKeys: getApiKeys2 }, { getProviderNodes: getProviderNodes2 }] = await Promise.all([
+    Promise.resolve().then(() => (init_connectionsRepo(), connectionsRepo_exports)),
+    Promise.resolve().then(() => (init_apiKeysRepo(), apiKeysRepo_exports)),
+    Promise.resolve().then(() => (init_nodesRepo(), nodesRepo_exports))
+  ]);
+  let allConnections = [];
+  try {
+    allConnections = await getProviderConnections2();
+  } catch {
+  }
+  const connectionMap = {};
+  for (const c of allConnections) connectionMap[c.id] = c.name || c.email || c.id;
+  const providerNodeNameMap = {};
+  try {
+    const nodes = await getProviderNodes2();
+    for (const n2 of nodes) if (n2.id && n2.name) providerNodeNameMap[n2.id] = n2.name;
+  } catch {
+  }
+  let allApiKeys = [];
+  try {
+    allApiKeys = await getApiKeys2();
+  } catch {
+  }
+  const apiKeyMap = {};
+  for (const k of allApiKeys) apiKeyMap[k.key] = { name: k.name, id: k.id, createdAt: k.createdAt };
+  const recentRows = db.all(`SELECT timestamp, provider, model, tokens, status FROM usageHistory ORDER BY id DESC LIMIT 100`);
+  const seen = /* @__PURE__ */ new Set();
+  const recentRequests = recentRows.map((r) => {
+    const t = parseJson(r.tokens, {}) || {};
+    return {
+      timestamp: r.timestamp,
+      model: r.model,
+      provider: r.provider || "",
+      promptTokens: t.prompt_tokens || t.input_tokens || 0,
+      completionTokens: t.completion_tokens || t.output_tokens || 0,
+      cachedTokens: t.cached_tokens || t.cache_read_input_tokens || 0,
+      status: r.status || "ok"
+    };
+  }).filter((e) => {
+    if (e.promptTokens === 0 && e.completionTokens === 0) return false;
+    const minute = e.timestamp ? e.timestamp.slice(0, 16) : "";
+    const key = `${e.model}|${e.provider}|${e.promptTokens}|${e.completionTokens}|${minute}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).slice(0, 20);
+  const stats = {
+    totalRequests: 0,
+    totalPromptTokens: 0,
+    totalCompletionTokens: 0,
+    totalCachedTokens: 0,
+    totalCost: 0,
+    byProvider: {},
+    byModel: {},
+    byAccount: {},
+    byApiKey: {},
+    byEndpoint: {},
+    last10Minutes: [],
+    pending: pendingRequests,
+    activeRequests: [],
+    recentRequests,
+    errorProvider: Date.now() - lastErrorProvider.ts < 1e4 ? lastErrorProvider.provider : ""
+  };
+  for (const [connectionId, models] of Object.entries(pendingRequests.byAccount)) {
+    for (const [modelKey, count] of Object.entries(models)) {
+      if (count > 0) {
+        const accountName = connectionMap[connectionId] || `Account ${connectionId.slice(0, 8)}...`;
+        const match = modelKey.match(/^(.*) \((.*)\)$/);
+        stats.activeRequests.push({
+          model: match ? match[1] : modelKey,
+          provider: match ? match[2] : "unknown",
+          account: accountName,
+          count
+        });
+      }
+    }
+  }
+  const now = /* @__PURE__ */ new Date();
+  const currentMinuteStart = new Date(Math.floor(now.getTime() / 6e4) * 6e4);
+  const tenMinutesAgo = new Date(currentMinuteStart.getTime() - 9 * 60 * 1e3);
+  const bucketMap = {};
+  for (let i = 0; i < 10; i++) {
+    const ts2 = currentMinuteStart.getTime() - (9 - i) * 60 * 1e3;
+    bucketMap[ts2] = { requests: 0, promptTokens: 0, completionTokens: 0, cost: 0 };
+    stats.last10Minutes.push(bucketMap[ts2]);
+  }
+  const recent10 = db.all(
+    `SELECT timestamp, promptTokens, completionTokens, cost FROM usageHistory WHERE timestamp >= ? AND timestamp <= ?`,
+    [tenMinutesAgo.toISOString(), now.toISOString()]
+  );
+  for (const r of recent10) {
+    const tt = new Date(r.timestamp).getTime();
+    const minuteStart = Math.floor(tt / 6e4) * 6e4;
+    if (bucketMap[minuteStart]) {
+      bucketMap[minuteStart].requests++;
+      bucketMap[minuteStart].promptTokens += r.promptTokens || 0;
+      bucketMap[minuteStart].completionTokens += r.completionTokens || 0;
+      bucketMap[minuteStart].cost += r.cost || 0;
+    }
+  }
+  const useDailySummary = period !== "24h" && period !== "today";
+  if (useDailySummary) {
+    const periodDays = { "7d": 7, "30d": 30, "60d": 60 };
+    const maxDays = periodDays[period] || null;
+    const dayRows = loadDaysInRange(db, maxDays);
+    for (const dr of dayRows) {
+      const dateKey = dr.dateKey;
+      const day = parseJson(dr.data, {});
+      stats.totalPromptTokens += day.promptTokens || 0;
+      stats.totalCompletionTokens += day.completionTokens || 0;
+      stats.totalCachedTokens += day.cachedTokens || 0;
+      stats.totalCost += day.cost || 0;
+      for (const [prov, p] of Object.entries(day.byProvider || {})) {
+        if (!stats.byProvider[prov]) stats.byProvider[prov] = { requests: 0, promptTokens: 0, completionTokens: 0, cachedTokens: 0, cost: 0 };
+        stats.byProvider[prov].requests += p.requests || 0;
+        stats.byProvider[prov].promptTokens += p.promptTokens || 0;
+        stats.byProvider[prov].completionTokens += p.completionTokens || 0;
+        stats.byProvider[prov].cachedTokens += p.cachedTokens || 0;
+        stats.byProvider[prov].cost += p.cost || 0;
+      }
+      for (const [mk, m] of Object.entries(day.byModel || {})) {
+        const rawModel = m.rawModel || mk.split("|")[0];
+        const provider = m.provider || mk.split("|")[1] || "";
+        const statsKey = provider ? `${rawModel} (${provider})` : rawModel;
+        const providerDisplayName = providerNodeNameMap[provider] || provider;
+        if (!stats.byModel[statsKey]) {
+          stats.byModel[statsKey] = { requests: 0, promptTokens: 0, completionTokens: 0, cachedTokens: 0, cost: 0, rawModel, provider: providerDisplayName, lastUsed: dateKey };
+        }
+        stats.byModel[statsKey].requests += m.requests || 0;
+        stats.byModel[statsKey].promptTokens += m.promptTokens || 0;
+        stats.byModel[statsKey].completionTokens += m.completionTokens || 0;
+        stats.byModel[statsKey].cachedTokens += m.cachedTokens || 0;
+        stats.byModel[statsKey].cost += m.cost || 0;
+        if (dateKey > (stats.byModel[statsKey].lastUsed || "")) stats.byModel[statsKey].lastUsed = dateKey;
+      }
+      for (const [connId, a] of Object.entries(day.byAccount || {})) {
+        const accountName = connectionMap[connId] || `Account ${connId.slice(0, 8)}...`;
+        const rawModel = a.rawModel || "";
+        const provider = a.provider || "";
+        const providerDisplayName = providerNodeNameMap[provider] || provider;
+        const accountKey = `${rawModel} (${provider} - ${accountName})`;
+        if (!stats.byAccount[accountKey]) {
+          stats.byAccount[accountKey] = { requests: 0, promptTokens: 0, completionTokens: 0, cachedTokens: 0, cost: 0, rawModel, provider: providerDisplayName, connectionId: connId, accountName, lastUsed: dateKey };
+        }
+        stats.byAccount[accountKey].requests += a.requests || 0;
+        stats.byAccount[accountKey].promptTokens += a.promptTokens || 0;
+        stats.byAccount[accountKey].completionTokens += a.completionTokens || 0;
+        stats.byAccount[accountKey].cachedTokens += a.cachedTokens || 0;
+        stats.byAccount[accountKey].cost += a.cost || 0;
+        if (dateKey > (stats.byAccount[accountKey].lastUsed || "")) stats.byAccount[accountKey].lastUsed = dateKey;
+      }
+      for (const [akKey, ak] of Object.entries(day.byApiKey || {})) {
+        const rawModel = ak.rawModel || "";
+        const provider = ak.provider || "";
+        const providerDisplayName = providerNodeNameMap[provider] || provider;
+        const apiKeyVal = ak.apiKey;
+        const keyInfo = apiKeyVal ? apiKeyMap[apiKeyVal] : null;
+        const keyName = keyInfo?.name || (apiKeyVal ? apiKeyVal.slice(0, 8) + "..." : "Local (No API Key)");
+        const apiKeyMasked = maskApiKey(apiKeyVal);
+        const apiKeyKey = apiKeyMasked || "local-no-key";
+        if (!stats.byApiKey[akKey]) {
+          stats.byApiKey[akKey] = { requests: 0, promptTokens: 0, completionTokens: 0, cachedTokens: 0, cost: 0, rawModel, provider: providerDisplayName, apiKeyMasked, keyName, apiKeyKey, lastUsed: dateKey };
+        }
+        stats.byApiKey[akKey].requests += ak.requests || 0;
+        stats.byApiKey[akKey].promptTokens += ak.promptTokens || 0;
+        stats.byApiKey[akKey].completionTokens += ak.completionTokens || 0;
+        stats.byApiKey[akKey].cachedTokens += ak.cachedTokens || 0;
+        stats.byApiKey[akKey].cost += ak.cost || 0;
+        if (dateKey > (stats.byApiKey[akKey].lastUsed || "")) stats.byApiKey[akKey].lastUsed = dateKey;
+      }
+      for (const [epKey, ep] of Object.entries(day.byEndpoint || {})) {
+        const endpoint = ep.endpoint || epKey.split("|")[0] || "Unknown";
+        const rawModel = ep.rawModel || "";
+        const provider = ep.provider || "";
+        const providerDisplayName = providerNodeNameMap[provider] || provider;
+        if (!stats.byEndpoint[epKey]) {
+          stats.byEndpoint[epKey] = { requests: 0, promptTokens: 0, completionTokens: 0, cachedTokens: 0, cost: 0, endpoint, rawModel, provider: providerDisplayName, lastUsed: dateKey };
+        }
+        stats.byEndpoint[epKey].requests += ep.requests || 0;
+        stats.byEndpoint[epKey].promptTokens += ep.promptTokens || 0;
+        stats.byEndpoint[epKey].completionTokens += ep.completionTokens || 0;
+        stats.byEndpoint[epKey].cachedTokens += ep.cachedTokens || 0;
+        stats.byEndpoint[epKey].cost += ep.cost || 0;
+        if (dateKey > (stats.byEndpoint[epKey].lastUsed || "")) stats.byEndpoint[epKey].lastUsed = dateKey;
+      }
+    }
+    const overlayCutoff = maxDays ? Date.now() - maxDays * 864e5 : 0;
+    const histRows = db.all(
+      `SELECT timestamp, provider, model, connectionId, apiKey, endpoint FROM usageHistory WHERE timestamp >= ?`,
+      [new Date(overlayCutoff).toISOString()]
+    );
+    for (const e of histRows) {
+      const ts2 = e.timestamp;
+      const modelKey = e.provider ? `${e.model} (${e.provider})` : e.model;
+      if (stats.byModel[modelKey] && new Date(ts2) > new Date(stats.byModel[modelKey].lastUsed)) stats.byModel[modelKey].lastUsed = ts2;
+      if (e.connectionId) {
+        const accountName = connectionMap[e.connectionId] || `Account ${e.connectionId.slice(0, 8)}...`;
+        const accountKey = `${e.model} (${e.provider} - ${accountName})`;
+        if (stats.byAccount[accountKey] && new Date(ts2) > new Date(stats.byAccount[accountKey].lastUsed)) stats.byAccount[accountKey].lastUsed = ts2;
+      }
+      const apiKeyKey = e.apiKey && typeof e.apiKey === "string" ? `${e.apiKey}|${e.model}|${e.provider || "unknown"}` : "local-no-key";
+      if (stats.byApiKey[apiKeyKey] && new Date(ts2) > new Date(stats.byApiKey[apiKeyKey].lastUsed)) stats.byApiKey[apiKeyKey].lastUsed = ts2;
+      const endpoint = e.endpoint || "Unknown";
+      const endpointKey = `${endpoint}|${e.model}|${e.provider || "unknown"}`;
+      if (stats.byEndpoint[endpointKey] && new Date(ts2) > new Date(stats.byEndpoint[endpointKey].lastUsed)) stats.byEndpoint[endpointKey].lastUsed = ts2;
+    }
+  } else {
+    let cutoff;
+    if (period === "today") {
+      const startOfDay = /* @__PURE__ */ new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      cutoff = startOfDay.toISOString();
+    } else {
+      cutoff = new Date(Date.now() - PERIOD_MS["24h"]).toISOString();
+    }
+    const filtered = db.all(
+      `SELECT timestamp, provider, model, connectionId, apiKey, endpoint, promptTokens, completionTokens, cost, tokens FROM usageHistory WHERE timestamp >= ?`,
+      [cutoff]
+    );
+    for (const r of filtered) {
+      const tokens = parseJson(r.tokens, {}) || {};
+      const promptTokens = tokens.prompt_tokens || 0;
+      const completionTokens = tokens.completion_tokens || 0;
+      const cachedTokens = tokens.cached_tokens || tokens.cache_read_input_tokens || 0;
+      const entryCost = r.cost || 0;
+      const providerDisplayName = providerNodeNameMap[r.provider] || r.provider;
+      stats.totalPromptTokens += promptTokens;
+      stats.totalCompletionTokens += completionTokens;
+      stats.totalCachedTokens += cachedTokens;
+      stats.totalCost += entryCost;
+      if (!stats.byProvider[r.provider]) stats.byProvider[r.provider] = { requests: 0, promptTokens: 0, completionTokens: 0, cachedTokens: 0, cost: 0 };
+      stats.byProvider[r.provider].requests++;
+      stats.byProvider[r.provider].promptTokens += promptTokens;
+      stats.byProvider[r.provider].completionTokens += completionTokens;
+      stats.byProvider[r.provider].cachedTokens += cachedTokens;
+      stats.byProvider[r.provider].cost += entryCost;
+      const modelKey = r.provider ? `${r.model} (${r.provider})` : r.model;
+      if (!stats.byModel[modelKey]) {
+        stats.byModel[modelKey] = { requests: 0, promptTokens: 0, completionTokens: 0, cachedTokens: 0, cost: 0, rawModel: r.model, provider: providerDisplayName, lastUsed: r.timestamp };
+      }
+      stats.byModel[modelKey].requests++;
+      stats.byModel[modelKey].promptTokens += promptTokens;
+      stats.byModel[modelKey].completionTokens += completionTokens;
+      stats.byModel[modelKey].cachedTokens += cachedTokens;
+      stats.byModel[modelKey].cost += entryCost;
+      if (new Date(r.timestamp) > new Date(stats.byModel[modelKey].lastUsed)) stats.byModel[modelKey].lastUsed = r.timestamp;
+      if (r.connectionId) {
+        const accountName = connectionMap[r.connectionId] || `Account ${r.connectionId.slice(0, 8)}...`;
+        const accountKey = `${r.model} (${r.provider} - ${accountName})`;
+        if (!stats.byAccount[accountKey]) {
+          stats.byAccount[accountKey] = { requests: 0, promptTokens: 0, completionTokens: 0, cachedTokens: 0, cost: 0, rawModel: r.model, provider: providerDisplayName, connectionId: r.connectionId, accountName, lastUsed: r.timestamp };
+        }
+        stats.byAccount[accountKey].requests++;
+        stats.byAccount[accountKey].promptTokens += promptTokens;
+        stats.byAccount[accountKey].completionTokens += completionTokens;
+        stats.byAccount[accountKey].cachedTokens += cachedTokens;
+        stats.byAccount[accountKey].cost += entryCost;
+        if (new Date(r.timestamp) > new Date(stats.byAccount[accountKey].lastUsed)) stats.byAccount[accountKey].lastUsed = r.timestamp;
+      }
+      if (r.apiKey && typeof r.apiKey === "string") {
+        const keyInfo = apiKeyMap[r.apiKey];
+        const keyName = keyInfo?.name || r.apiKey.slice(0, 8) + "...";
+        const apiKeyMasked = maskApiKey(r.apiKey);
+        const akKey = `${apiKeyMasked}|${r.model}|${r.provider || "unknown"}`;
+        if (!stats.byApiKey[akKey]) {
+          stats.byApiKey[akKey] = { requests: 0, promptTokens: 0, completionTokens: 0, cachedTokens: 0, cost: 0, rawModel: r.model, provider: providerDisplayName, apiKeyMasked, keyName, apiKeyKey: apiKeyMasked, lastUsed: r.timestamp };
+        }
+        const ake = stats.byApiKey[akKey];
+        ake.requests++;
+        ake.promptTokens += promptTokens;
+        ake.completionTokens += completionTokens;
+        ake.cachedTokens += cachedTokens;
+        ake.cost += entryCost;
+        if (new Date(r.timestamp) > new Date(ake.lastUsed)) ake.lastUsed = r.timestamp;
+      } else {
+        if (!stats.byApiKey["local-no-key"]) {
+          stats.byApiKey["local-no-key"] = { requests: 0, promptTokens: 0, completionTokens: 0, cachedTokens: 0, cost: 0, rawModel: r.model, provider: providerDisplayName, apiKeyMasked: null, keyName: "Local (No API Key)", apiKeyKey: "local-no-key", lastUsed: r.timestamp };
+        }
+        const ake = stats.byApiKey["local-no-key"];
+        ake.requests++;
+        ake.promptTokens += promptTokens;
+        ake.completionTokens += completionTokens;
+        ake.cachedTokens += cachedTokens;
+        ake.cost += entryCost;
+        if (new Date(r.timestamp) > new Date(ake.lastUsed)) ake.lastUsed = r.timestamp;
+      }
+      const endpoint = r.endpoint || "Unknown";
+      const epKey = `${endpoint}|${r.model}|${r.provider || "unknown"}`;
+      if (!stats.byEndpoint[epKey]) {
+        stats.byEndpoint[epKey] = { requests: 0, promptTokens: 0, completionTokens: 0, cachedTokens: 0, cost: 0, endpoint, rawModel: r.model, provider: providerDisplayName, lastUsed: r.timestamp };
+      }
+      const epe = stats.byEndpoint[epKey];
+      epe.requests++;
+      epe.promptTokens += promptTokens;
+      epe.completionTokens += completionTokens;
+      epe.cachedTokens += cachedTokens;
+      epe.cost += entryCost;
+      if (new Date(r.timestamp) > new Date(epe.lastUsed)) epe.lastUsed = r.timestamp;
+    }
+  }
+  stats.totalRequests = Object.values(stats.byProvider).reduce((sum, p) => sum + (p.requests || 0), 0);
+  return stats;
+}
+async function getChartData(period = "7d") {
+  const db = await getAdapter();
+  const now = Date.now();
+  if (period === "today") {
+    const bucketCount2 = 24;
+    const bucketMs = 36e5;
+    const startOfDay = /* @__PURE__ */ new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const startTime = startOfDay.getTime();
+    const endTime = startTime + bucketCount2 * bucketMs;
+    const labelFn2 = (ts2) => new Date(ts2).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
+    const buckets = Array.from({ length: bucketCount2 }, (_, i) => ({ label: labelFn2(startTime + i * bucketMs), tokens: 0, cost: 0 }));
+    const rows = db.all(
+      `SELECT timestamp, promptTokens, completionTokens, cost FROM usageHistory WHERE timestamp >= ?`,
+      [new Date(startTime).toISOString()]
+    );
+    for (const r of rows) {
+      const t = new Date(r.timestamp).getTime();
+      if (t < startTime || t >= endTime) continue;
+      const idx = Math.floor((t - startTime) / bucketMs);
+      if (idx >= 0 && idx < bucketCount2) {
+        buckets[idx].tokens += (r.promptTokens || 0) + (r.completionTokens || 0);
+        buckets[idx].cost += r.cost || 0;
+      }
+    }
+    return buckets;
+  }
+  if (period === "24h") {
+    const bucketCount2 = 24;
+    const bucketMs = 36e5;
+    const labelFn2 = (ts2) => new Date(ts2).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
+    const startTime = now - bucketCount2 * bucketMs;
+    const buckets = Array.from({ length: bucketCount2 }, (_, i) => ({ label: labelFn2(startTime + i * bucketMs), tokens: 0, cost: 0 }));
+    const rows = db.all(
+      `SELECT timestamp, promptTokens, completionTokens, cost FROM usageHistory WHERE timestamp >= ?`,
+      [new Date(startTime).toISOString()]
+    );
+    for (const r of rows) {
+      const t = new Date(r.timestamp).getTime();
+      if (t < startTime || t > now) continue;
+      const idx = Math.min(Math.floor((t - startTime) / bucketMs), bucketCount2 - 1);
+      buckets[idx].tokens += (r.promptTokens || 0) + (r.completionTokens || 0);
+      buckets[idx].cost += r.cost || 0;
+    }
+    return buckets;
+  }
+  if (period === "all") {
+    const labelFn2 = (d) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    const dayRows2 = loadDaysInRange(db, null);
+    if (!dayRows2.length) return [];
+    const sortedDays = dayRows2.slice().sort((a, b) => a.dateKey.localeCompare(b.dateKey));
+    const firstDateParts = sortedDays[0].dateKey.split("-").map(Number);
+    const firstDate = new Date(firstDateParts[0], firstDateParts[1] - 1, firstDateParts[2]);
+    const today2 = /* @__PURE__ */ new Date();
+    const msPerDay = 864e5;
+    const totalDays = Math.max(1, Math.round((new Date(today2.getFullYear(), today2.getMonth(), today2.getDate()) - firstDate) / msPerDay) + 1);
+    const dayMap2 = {};
+    for (const r of sortedDays) dayMap2[r.dateKey] = parseJson(r.data, {});
+    return Array.from({ length: totalDays }, (_, i) => {
+      const d = new Date(firstDate);
+      d.setDate(d.getDate() + i);
+      const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const dayData = dayMap2[dateKey];
+      return {
+        label: labelFn2(d),
+        tokens: dayData ? (dayData.promptTokens || 0) + (dayData.completionTokens || 0) : 0,
+        cost: dayData ? dayData.cost || 0 : 0
+      };
+    });
+  }
+  const bucketCount = period === "7d" ? 7 : period === "30d" ? 30 : 60;
+  const today = /* @__PURE__ */ new Date();
+  const labelFn = (d) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const dayRows = loadDaysInRange(db, bucketCount);
+  const dayMap = {};
+  for (const r of dayRows) dayMap[r.dateKey] = parseJson(r.data, {});
+  return Array.from({ length: bucketCount }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(d.getDate() - (bucketCount - 1 - i));
+    const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const dayData = dayMap[dateKey];
+    return {
+      label: labelFn(d),
+      tokens: dayData ? (dayData.promptTokens || 0) + (dayData.completionTokens || 0) : 0,
+      cost: dayData ? dayData.cost || 0 : 0
+    };
+  });
+}
+function formatLogDate(date = /* @__PURE__ */ new Date()) {
+  const pad = (n2) => String(n2).padStart(2, "0");
+  return `${pad(date.getDate())}-${pad(date.getMonth() + 1)}-${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
 async function appendRequestLog() {
 }
-var PENDING_TIMEOUT_MS, RING_CAP, CONN_CACHE_TTL_MS, pendingRequests, lastErrorProvider, pendingTimers, recentRing, connCache, statsEmitTimers, statsEmitter;
+async function getRecentLogs(limit = 200) {
+  try {
+    const db = await getAdapter();
+    const rows = db.all(
+      `SELECT timestamp, provider, model, connectionId, promptTokens, completionTokens, status, tokens FROM usageHistory ORDER BY id DESC LIMIT ?`,
+      [limit]
+    );
+    if (!rows.length) return [];
+    const connMap = {};
+    try {
+      const { getProviderConnections: getProviderConnections2 } = await Promise.resolve().then(() => (init_connectionsRepo(), connectionsRepo_exports));
+      const connections = await getProviderConnections2();
+      for (const c of connections) connMap[c.id] = c.name || c.email || "";
+    } catch {
+    }
+    return rows.map((r) => {
+      const ts2 = formatLogDate(new Date(r.timestamp));
+      const p = r.provider?.toUpperCase() || "-";
+      const m = r.model || "-";
+      const account = connMap[r.connectionId] || (r.connectionId ? r.connectionId.slice(0, 8) : "-");
+      const tk = r.tokens ? parseJson(r.tokens, {}) : {};
+      const sent = r.promptTokens ?? tk.prompt_tokens ?? "-";
+      const received = r.completionTokens ?? tk.completion_tokens ?? "-";
+      return `${ts2} | ${m} | ${p} | ${account} | ${sent} | ${received} | ${r.status || "-"}`;
+    });
+  } catch (e) {
+    console.error("[usageRepo] getRecentLogs failed:", e.message);
+    return [];
+  }
+}
+var PENDING_TIMEOUT_MS, RING_CAP, CONN_CACHE_TTL_MS, PERIOD_MS, pendingRequests, lastErrorProvider, pendingTimers, recentRing, connCache, statsEmitTimers, statsEmitter;
 var init_usageRepo = __esm({
   "src/lib/db/repos/usageRepo.js"() {
     init_driver();
@@ -20345,6 +20814,7 @@ var init_usageRepo = __esm({
     PENDING_TIMEOUT_MS = 60 * 1e3;
     RING_CAP = 50;
     CONN_CACHE_TTL_MS = 30 * 1e3;
+    PERIOD_MS = { "24h": 864e5, "7d": 6048e5, "30d": 2592e6, "60d": 5184e6 };
     if (!global._pendingRequests) global._pendingRequests = { byModel: {}, byAccount: {} };
     if (!global._lastErrorProvider) global._lastErrorProvider = { provider: "", ts: 0 };
     if (!global._statsEmitter) {
@@ -52215,9 +52685,1302 @@ async function buildModelsList(kindFilter, options = {}) {
   return dedupedModels;
 }
 
+// src/dashboardApi.js
+init_usageDb();
+init_localDb();
+function registerDashboardRoutes(app) {
+  app.get("/api/dashboard/stats", async (c) => {
+    try {
+      const period = c.req.query("period") || "all";
+      const stats = await getUsageStats(period);
+      const connections = await getProviderConnections();
+      const nodes = await getProviderNodes();
+      const keys = await getApiKeys();
+      const activeConns = connections.filter((x) => x.isActive !== 0);
+      const providerBreakdown = {};
+      for (const conn of connections) {
+        const p = conn.provider;
+        if (!providerBreakdown[p]) providerBreakdown[p] = 0;
+        providerBreakdown[p]++;
+      }
+      return c.json({
+        period,
+        stats,
+        meta: {
+          totalAccounts: connections.length,
+          activeAccounts: activeConns.length,
+          totalNodes: nodes.length,
+          totalApiKeys: keys.length,
+          providers: providerBreakdown
+        }
+      });
+    } catch (err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+  app.get("/api/dashboard/chart", async (c) => {
+    try {
+      const period = c.req.query("period") || "all";
+      const data = await getChartData(period);
+      return c.json(data);
+    } catch (err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+  app.get("/api/dashboard/logs", async (c) => {
+    try {
+      const limit = Number(c.req.query("limit")) || 100;
+      const logs = await getRecentLogs(limit);
+      return c.json(logs);
+    } catch (err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+  app.get("/api/dashboard/accounts", async (c) => {
+    try {
+      const connections = await getProviderConnections();
+      const safeConns = connections.map((cn) => {
+        let parsedData = {};
+        try {
+          parsedData = typeof cn.data === "string" ? JSON.parse(cn.data) : cn.data || {};
+        } catch {
+        }
+        return {
+          id: cn.id,
+          provider: cn.provider,
+          name: cn.name || cn.email || "Unnamed Account",
+          email: cn.email || "",
+          authType: cn.authType,
+          isActive: cn.isActive !== 0,
+          priority: cn.priority || 0,
+          createdAt: cn.createdAt,
+          updatedAt: cn.updatedAt,
+          testStatus: parsedData.testStatus || (cn.isActive !== 0 ? "active" : "inactive"),
+          hasAccessToken: !!parsedData.accessToken,
+          hasApiKey: !!parsedData.apiKey
+        };
+      });
+      return c.json(safeConns);
+    } catch (err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+  app.post("/api/dashboard/accounts/toggle", async (c) => {
+    try {
+      const { id, isActive } = await c.req.json();
+      await updateProviderConnection(id, { isActive: isActive ? 1 : 0 });
+      return c.json({ success: true, id, isActive });
+    } catch (err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+  app.get("/api/dashboard/models", async (c) => {
+    try {
+      const rawModels = await buildModelsList(["llm"]);
+      const models = Array.isArray(rawModels) ? rawModels : rawModels?.data || [];
+      const aliases = await getModelAliases();
+      return c.json({ models, aliases: aliases || {} });
+    } catch (err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+  app.get("/api/dashboard/combos", async (c) => {
+    try {
+      const combos = await getCombos();
+      return c.json(combos);
+    } catch (err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+  app.post("/api/dashboard/combos", async (c) => {
+    try {
+      const { name, models } = await c.req.json();
+      if (!name || !models || !models.length) {
+        return c.json({ error: "Name and models array are required" }, 400);
+      }
+      const newCombo = await createCombo({ name, models });
+      return c.json({ success: true, combo: newCombo });
+    } catch (err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+  app.delete("/api/dashboard/combos/:id", async (c) => {
+    try {
+      const id = c.req.param("id");
+      await deleteCombo(id);
+      return c.json({ success: true, id });
+    } catch (err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+  app.get("/api/dashboard/settings", async (c) => {
+    try {
+      const settings = await getSettings();
+      return c.json(settings);
+    } catch (err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+  app.post("/api/dashboard/settings", async (c) => {
+    try {
+      const body = await c.req.json();
+      await updateSettings(body);
+      const updated = await getSettings();
+      return c.json({ success: true, settings: updated });
+    } catch (err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+  app.get("/api/dashboard/keys", async (c) => {
+    try {
+      const keys = await getApiKeys();
+      return c.json(keys);
+    } catch (err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+  app.post("/api/dashboard/keys", async (c) => {
+    try {
+      const { name } = await c.req.json();
+      const newKey = await createApiKey({ name: name || "API Key" });
+      return c.json({ success: true, key: newKey });
+    } catch (err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+  app.delete("/api/dashboard/keys/:id", async (c) => {
+    try {
+      const id = c.req.param("id");
+      await deleteApiKey(id);
+      return c.json({ success: true, id });
+    } catch (err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+  app.get("/api/dashboard/proxy-pools", async (c) => {
+    try {
+      const pools = await getProxyPools();
+      return c.json(pools);
+    } catch (err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+}
+
+// src/dashboard.html
+var dashboard_default = `<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>9Router Hono \u2014 Control Plane</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              400: '#22d3ee',
+              500: '#06b6d4',
+              600: '#0891b2',
+            },
+            surface: {
+              DEFAULT: '#161b22',
+              card: '#21262d',
+              hover: '#30363d',
+            },
+            bg: {
+              DEFAULT: '#0d1117',
+              alt: '#161b22',
+            },
+            border: {
+              DEFAULT: '#30363d',
+              subtle: '#21262d',
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body {
+      background-color: #0d1117;
+      color: #f0f6fc;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      vertical-align: middle;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #30363d;
+      border-radius: 9999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #06b6d4;
+    }
+    .landing-grid {
+      background-size: 32px 32px;
+      background-image: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                        linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    }
+    .nav-btn.active {
+      background: rgba(6, 182, 212, 0.15);
+      color: #22d3ee;
+      border-left: 3px solid #06b6d4;
+    }
+    .nav-btn.active .material-symbols-outlined {
+      font-variation-settings: 'FILL' 1;
+      color: #22d3ee;
+    }
+    .toast-animate {
+      animation: slideIn 0.2s ease-out;
+    }
+    @keyframes slideIn {
+      from { transform: translateY(-10px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body class="flex h-screen w-full overflow-hidden antialiased selection:bg-brand-500 selection:text-black">
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Mobile Drawer Overlay -->
+  <div id="drawer-overlay" onclick="toggleSidebar(false)" class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden hidden"></div>
+
+  <!-- Left Sidebar (Full Navigation Aligned with 9Router) -->
+  <aside id="app-sidebar" class="fixed lg:static inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-[#21262d] bg-[#161b22]/95 backdrop-blur-xl transition-transform duration-300 -translate-x-full lg:translate-x-0 min-h-full">
+    
+    <!-- Traffic lights dots -->
+    <div class="flex items-center gap-2 px-6 pt-5 pb-2">
+      <div class="w-3 h-3 rounded-full bg-[#FF5F56]"></div>
+      <div class="w-3 h-3 rounded-full bg-[#FFBD2E]"></div>
+      <div class="w-3 h-3 rounded-full bg-[#27C93F]"></div>
+      <button onclick="toggleSidebar(false)" class="ml-auto lg:hidden text-gray-400 hover:text-white p-1">
+        <span class="material-symbols-outlined text-[18px]">close</span>
+      </button>
+    </div>
+
+    <!-- 9Router Logo Brand (Cyan & Indigo Edition) -->
+    <div class="px-6 py-4 flex flex-col gap-2">
+      <a href="/dashboard" class="flex items-center gap-3">
+        <div class="flex items-center justify-center size-9 rounded-[10px] bg-gradient-to-br from-cyan-400 via-teal-500 to-blue-600 shadow-[0_2px_14px_-2px_rgba(6,182,212,0.4)]">
+          <span class="material-symbols-outlined text-black text-[20px] font-bold">bolt</span>
+        </div>
+        <div class="flex flex-col">
+          <div class="flex items-center gap-1.5">
+            <h1 class="text-base font-bold tracking-tight text-white">9Router Hono</h1>
+            <span class="px-1.5 py-0.5 text-[9px] font-mono font-bold rounded bg-cyan-950 text-cyan-400 border border-cyan-800/60">v0.4.0</span>
+          </div>
+          <span class="text-xs text-gray-400 font-mono flex items-center gap-1.5">
+            <span class="size-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            Hono Engine (<span id="port-label">20129</span>)
+          </span>
+        </div>
+      </a>
+    </div>
+
+    <!-- Sidebar Navigation Menu -->
+    <nav class="flex-1 px-4 py-2 space-y-0.5 overflow-y-auto custom-scrollbar">
+      
+      <button onclick="navigate('endpoint')" id="nav-endpoint" class="nav-btn active w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-gray-400 hover:bg-surface-card hover:text-white transition-all text-left">
+        <span class="material-symbols-outlined text-[18px]">api</span>
+        <span>Endpoint & Key</span>
+      </button>
+
+      <button onclick="navigate('providers')" id="nav-providers" class="nav-btn w-full flex items-center justify-between px-3 py-2 rounded-lg text-[13px] font-medium text-gray-400 hover:bg-surface-card hover:text-white transition-all text-left">
+        <div class="flex items-center gap-3">
+          <span class="material-symbols-outlined text-[18px]">dns</span>
+          <span>Providers</span>
+        </div>
+        <span id="badge-accounts" class="px-2 py-0.5 text-[10px] font-mono rounded bg-surface-card text-cyan-400 font-semibold">...</span>
+      </button>
+
+      <button onclick="navigate('combos')" id="nav-combos" class="nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-gray-400 hover:bg-surface-card hover:text-white transition-all text-left">
+        <span class="material-symbols-outlined text-[18px]">layers</span>
+        <span>Combo & Vision Adapter</span>
+      </button>
+
+      <button onclick="navigate('usage')" id="nav-usage" class="nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-gray-400 hover:bg-surface-card hover:text-white transition-all text-left">
+        <span class="material-symbols-outlined text-[18px]">bar_chart</span>
+        <span>Usage</span>
+      </button>
+
+      <button onclick="navigate('tokensaver')" id="nav-tokensaver" class="nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-gray-400 hover:bg-surface-card hover:text-white transition-all text-left">
+        <span class="material-symbols-outlined text-[18px]">savings</span>
+        <span>Token Saver</span>
+      </button>
+
+      <!-- Divider -->
+      <div class="pt-4 mt-2 space-y-0.5 border-t border-[#21262d]">
+        <p class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 font-mono">
+          Developer & Diagnostics
+        </p>
+
+        <button onclick="navigate('playground')" id="nav-playground" class="nav-btn w-full flex items-center justify-between px-3 py-2 rounded-lg text-[13px] font-medium text-gray-400 hover:bg-surface-card hover:text-white transition-all text-left">
+          <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-[18px]">terminal</span>
+            <span>Live Playground</span>
+          </div>
+          <span class="px-1.5 py-0.2 text-[9px] font-mono font-bold rounded bg-cyan-950 text-cyan-400 border border-cyan-800/40">FAST</span>
+        </button>
+
+        <button onclick="navigate('catalog')" id="nav-catalog" class="nav-btn w-full flex items-center justify-between px-3 py-2 rounded-lg text-[13px] font-medium text-gray-400 hover:bg-surface-card hover:text-white transition-all text-left">
+          <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-[18px]">inventory_2</span>
+            <span>Model Catalog</span>
+          </div>
+          <span id="badge-models" class="px-2 py-0.5 text-[10px] font-mono rounded bg-surface-card text-gray-300 font-semibold">...</span>
+        </button>
+
+        <button onclick="navigate('logs')" id="nav-logs" class="nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-gray-400 hover:bg-surface-card hover:text-white transition-all text-left">
+          <span class="material-symbols-outlined text-[18px]">description</span>
+          <span>Console Log</span>
+        </button>
+      </div>
+
+    </nav>
+
+    <!-- Footer Local Storage indicator -->
+    <div class="p-4 border-t border-[#21262d] bg-[#12161c]">
+      <div class="flex items-center justify-between text-xs text-gray-400 mb-1">
+        <div class="flex items-center gap-2">
+          <span class="size-2 rounded-full bg-emerald-400"></span>
+          <span class="font-medium text-gray-200">Local Mode</span>
+        </div>
+        <span class="text-[10px] font-mono text-cyan-400">SQLite Active</span>
+      </div>
+      <div class="text-[10px] text-gray-500 font-mono truncate">
+        ~/.9router/db/data.sqlite
+      </div>
+    </div>
+  </aside>
+
+  <!-- Right App Container -->
+  <div class="flex flex-col flex-1 h-full min-w-0 relative isolate">
+    <div class="landing-grid absolute inset-0 pointer-events-none -z-10" aria-hidden="true"></div>
+
+    <!-- Header bar -->
+    <header class="h-14 border-b border-[#21262d] bg-[#0d1117]/80 backdrop-blur-md px-6 flex items-center justify-between z-10">
+      <div class="flex items-center gap-3">
+        <button onclick="toggleSidebar(true)" class="lg:hidden p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-surface-card">
+          <span class="material-symbols-outlined">menu</span>
+        </button>
+        <h2 id="top-title" class="text-sm font-semibold text-white tracking-tight">
+          Endpoint & Key
+        </h2>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <span class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-950/70 text-emerald-400 border border-emerald-800/40 text-xs font-mono">
+          <span class="size-1.5 rounded-full bg-emerald-400"></span>
+          Hono RegExpRouter &lt; 0.5ms
+        </span>
+
+        <button onclick="refreshCurrent()" class="px-3 py-1.5 rounded-lg bg-surface-card hover:bg-surface-hover border border-[#30363d] text-xs text-gray-300 hover:text-white flex items-center gap-1.5 transition-all shadow-sm">
+          <span class="material-symbols-outlined text-[16px]">refresh</span>
+          <span class="font-medium">Refresh</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Scrollable Workspace Views -->
+    <main class="flex-1 overflow-y-auto custom-scrollbar p-6 lg:p-10">
+      <div class="max-w-7xl mx-auto space-y-6">
+
+        <!-- ======================================================== -->
+        <!-- TAB 1: ENDPOINT & KEY                                    -->
+        <!-- ======================================================== -->
+        <div id="view-endpoint" class="view-panel space-y-6">
+          <div class="bg-surface border border-[#30363d] rounded-xl p-5 space-y-5">
+            <div>
+              <h3 class="text-base font-semibold text-white">Endpoint Configuration</h3>
+              <p class="text-xs text-gray-400 mt-0.5">Sub-millisecond local routing endpoints powered by Hono</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 font-mono text-xs">
+              <div class="bg-bg-alt p-3.5 rounded-lg border border-[#30363d] flex flex-col justify-between">
+                <span class="text-[11px] text-gray-400 uppercase tracking-wider font-semibold">OpenAI Compatible URL</span>
+                <div class="mt-2 flex items-center justify-between">
+                  <span id="lbl-openai-url" class="text-cyan-400 font-bold">http://localhost:20129/v1</span>
+                  <button onclick="copyText('http://localhost:20129/v1')" class="px-2 py-0.5 bg-surface-card hover:bg-surface-hover rounded text-[11px] text-white">Copy</button>
+                </div>
+              </div>
+
+              <div class="bg-bg-alt p-3.5 rounded-lg border border-[#30363d] flex flex-col justify-between">
+                <span class="text-[11px] text-gray-400 uppercase tracking-wider font-semibold">Claude Messages URL</span>
+                <div class="mt-2 flex items-center justify-between">
+                  <span id="lbl-claude-url" class="text-emerald-400 font-bold">http://localhost:20129/v1</span>
+                  <button onclick="copyText('http://localhost:20129/v1')" class="px-2 py-0.5 bg-surface-card hover:bg-surface-hover rounded text-[11px] text-white">Copy</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="space-y-3 pt-2">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 font-mono">Integration Commands</h4>
+              <div class="bg-bg-alt p-3.5 rounded-lg border border-[#30363d] font-mono text-xs space-y-1.5">
+                <div class="text-[11px] text-cyan-400 font-bold">Claude Code CLI:</div>
+                <div class="bg-[#0d1117] p-2.5 rounded text-gray-300 overflow-x-auto select-all">ANTHROPIC_BASE_URL="http://localhost:20129" claude</div>
+              </div>
+              <div class="bg-bg-alt p-3.5 rounded-lg border border-[#30363d] font-mono text-xs space-y-1.5">
+                <div class="text-[11px] text-emerald-400 font-bold">Cursor / Aider / OpenAI SDK:</div>
+                <div class="bg-[#0d1117] p-2.5 rounded text-gray-300 overflow-x-auto select-all">OPENAI_BASE_URL="http://localhost:20129/v1" OPENAI_API_KEY="sk-any-key"</div>
+              </div>
+            </div>
+
+            <!-- API Keys Section with Add Key Modal Button -->
+            <div class="pt-4 border-t border-[#30363d] space-y-3">
+              <div class="flex items-center justify-between">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 font-mono">Active API Keys</h4>
+                <div class="flex items-center gap-2">
+                  <input type="text" id="inp-new-key-name" placeholder="New Key Name..." class="bg-bg-alt border border-[#30363d] rounded px-2 py-1 text-xs text-white font-mono placeholder-gray-500">
+                  <button onclick="createNewApiKey()" class="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 text-white rounded text-xs font-medium flex items-center gap-1 font-mono">
+                    <span class="material-symbols-outlined text-[14px]">add</span> Add Key
+                  </button>
+                </div>
+              </div>
+              <div id="list-keys" class="space-y-2 font-mono text-xs"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- TAB 2: PROVIDERS & ACCOUNTS                              -->
+        <!-- ======================================================== -->
+        <div id="view-providers" class="view-panel hidden space-y-4">
+          <div class="bg-surface border border-[#30363d] rounded-xl p-5 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 class="text-base font-semibold text-white">Connected Provider Accounts</h3>
+                <p class="text-xs text-gray-400 mt-0.5">Click any account toggle to enable or disable failover routing</p>
+              </div>
+              <input type="text" id="inp-search-accounts" oninput="filterAccounts()" placeholder="Filter by email, name, provider..." class="w-full sm:w-72 bg-bg-alt border border-[#30363d] rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 font-mono">
+            </div>
+
+            <div class="overflow-x-auto custom-scrollbar max-h-[600px] border border-[#30363d] rounded-lg">
+              <table class="w-full text-left text-xs text-gray-200">
+                <thead class="bg-bg-alt uppercase text-[10px] text-gray-400 font-mono sticky top-0 border-b border-[#30363d]">
+                  <tr>
+                    <th class="py-2.5 px-3">Provider</th>
+                    <th class="py-2.5 px-3">Account Name / Email</th>
+                    <th class="py-2.5 px-3">Auth Type</th>
+                    <th class="py-2.5 px-3">Action Toggle</th>
+                    <th class="py-2.5 px-3">Priority</th>
+                    <th class="py-2.5 px-3">Account ID</th>
+                  </tr>
+                </thead>
+                <tbody id="tbl-accounts" class="divide-y divide-[#30363d] font-mono"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- TAB 3: COMBOS & VISION ADAPTER                           -->
+        <!-- ======================================================== -->
+        <div id="view-combos" class="view-panel hidden space-y-4">
+          <div class="bg-surface border border-[#30363d] rounded-xl p-5 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 class="text-base font-semibold text-white">Combo & Vision Adapters</h3>
+                <p class="text-xs text-gray-400 mt-0.5">Multi-model fallback arrays with automatic capacity adapters</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <input type="text" id="inp-new-combo-name" placeholder="Combo name..." class="bg-bg-alt border border-[#30363d] rounded px-2 py-1 text-xs text-white font-mono">
+                <input type="text" id="inp-new-combo-models" placeholder="model1, model2..." class="bg-bg-alt border border-[#30363d] rounded px-2 py-1 text-xs text-white font-mono">
+                <button onclick="createNewCombo()" class="px-3 py-1 bg-cyan-600 hover:bg-cyan-500 text-white rounded text-xs font-mono font-medium">Create</button>
+              </div>
+            </div>
+            <div id="list-combos" class="space-y-2.5"></div>
+          </div>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- TAB 4: USAGE & ANALYTICS                                 -->
+        <!-- ======================================================== -->
+        <div id="view-usage" class="view-panel hidden space-y-6">
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <div class="bg-surface border border-[#30363d] rounded-xl p-4">
+              <span class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider block mb-1">Total Tokens</span>
+              <div id="st-total-tokens" class="text-xl lg:text-2xl font-bold font-mono text-white">...</div>
+              <div class="mt-2 text-[11px] text-gray-400 font-mono truncate">
+                <span id="st-prompt-tokens" class="text-cyan-400">0</span> in \xB7 <span id="st-comp-tokens" class="text-emerald-400">0</span> out
+              </div>
+            </div>
+
+            <div class="bg-surface border border-[#30363d] rounded-xl p-4">
+              <span class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider block mb-1">Total Requests</span>
+              <div id="st-total-requests" class="text-xl lg:text-2xl font-bold font-mono text-white">...</div>
+              <div class="mt-2 text-[11px] text-gray-400 font-mono">
+                Across <span id="st-active-acc" class="text-white font-bold">0</span> Accounts
+              </div>
+            </div>
+
+            <div class="bg-surface border border-[#30363d] rounded-xl p-4">
+              <span class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider block mb-1">Estimated Value</span>
+              <div id="st-total-cost" class="text-xl lg:text-2xl font-bold font-mono text-white">$0.00</div>
+              <div class="mt-2 text-[11px] text-gray-400 font-mono">API Saved Equivalent</div>
+            </div>
+
+            <div class="bg-surface border border-[#30363d] rounded-xl p-4">
+              <span class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider block mb-1">Routing Overhead</span>
+              <div class="text-xl lg:text-2xl font-bold font-mono text-emerald-400">&lt; 0.45 ms</div>
+              <div class="mt-2 text-[11px] text-gray-400 font-mono">Hono RegExpRouter</div>
+            </div>
+          </div>
+
+          <div class="bg-surface border border-[#30363d] rounded-xl p-5 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 class="text-sm font-semibold text-white">Token Throughput Timeline</h3>
+                <p class="text-xs text-gray-400 mt-0.5">Historical ledger data from SQLite</p>
+              </div>
+              <div class="inline-flex bg-bg-alt p-1 rounded-lg border border-[#30363d]">
+                <button onclick="changePeriod('today')" id="btn-p-today" class="px-3 py-1 text-xs font-medium rounded text-gray-400 hover:text-white transition-all">Today</button>
+                <button onclick="changePeriod('7d')" id="btn-p-7d" class="px-3 py-1 text-xs font-medium rounded text-gray-400 hover:text-white transition-all">7D</button>
+                <button onclick="changePeriod('30d')" id="btn-p-30d" class="px-3 py-1 text-xs font-medium rounded text-gray-400 hover:text-white transition-all">30D</button>
+                <button onclick="changePeriod('60d')" id="btn-p-60d" class="px-3 py-1 text-xs font-medium rounded text-gray-400 hover:text-white transition-all">60D</button>
+                <button onclick="changePeriod('all')" id="btn-p-all" class="px-3 py-1 text-xs font-bold rounded bg-cyan-600 text-white shadow-sm transition-all">All</button>
+              </div>
+            </div>
+            <div class="h-64 lg:h-72 w-full">
+              <canvas id="chart-canvas"></canvas>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-surface border border-[#30363d] rounded-xl p-5 space-y-3">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 font-mono flex items-center justify-between">
+                <span>Top Models by Volume</span>
+                <span class="text-[10px] text-cyan-400">Ranked by Requests</span>
+              </h4>
+              <div id="list-top-models" class="space-y-2 max-h-80 overflow-y-auto custom-scrollbar pr-1"></div>
+            </div>
+
+            <div class="bg-surface border border-[#30363d] rounded-xl p-5 space-y-3">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 font-mono flex items-center justify-between">
+                <span>Provider Accounts Breakdown</span>
+                <span class="text-[10px] text-emerald-400">Health Pool</span>
+              </h4>
+              <div id="grid-providers" class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-80 overflow-y-auto custom-scrollbar pr-1"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- TAB 5: TOKEN SAVER                                       -->
+        <!-- ======================================================== -->
+        <div id="view-tokensaver" class="view-panel hidden space-y-4">
+          <div class="bg-surface border border-[#30363d] rounded-xl p-5 space-y-4">
+            <div>
+              <h3 class="text-base font-semibold text-white">Token Saver & Latency Optimizations</h3>
+              <p class="text-xs text-gray-400 mt-0.5">Interactive toggles for compression, circuit breaker, and keep-alive</p>
+            </div>
+            <div id="grid-tokensaver" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs font-mono"></div>
+          </div>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- TAB 6: LIVE PLAYGROUND                                   -->
+        <!-- ======================================================== -->
+        <div id="view-playground" class="view-panel hidden space-y-4">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="bg-surface border border-[#30363d] rounded-xl p-5 space-y-4">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center justify-between">
+                <span>Playground Options</span>
+                <span class="text-cyan-400 font-mono">\u26A1 Direct Route</span>
+              </h3>
+
+              <div>
+                <label class="block text-xs text-gray-400 mb-1 font-mono">Model Target</label>
+                <select id="sel-pg-model" class="w-full bg-bg-alt border border-[#30363d] rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-cyan-500 font-mono">
+                  <!-- Populated dynamically -->
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs text-gray-400 mb-1 font-mono">Protocol</label>
+                <select id="sel-pg-proto" class="w-full bg-bg-alt border border-[#30363d] rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-cyan-500 font-mono">
+                  <option value="/v1/chat/completions">POST /v1/chat/completions (OpenAI Format)</option>
+                  <option value="/v1/messages">POST /v1/messages (Claude Format)</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs text-gray-400 mb-1 font-mono">System Message</label>
+                <textarea id="txt-pg-system" rows="2" class="w-full bg-bg-alt border border-[#30363d] rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-cyan-500 font-mono">You are a helpful AI assistant running on 9router-hono.</textarea>
+              </div>
+
+              <div>
+                <label class="block text-xs text-gray-400 mb-1 font-mono">User Prompt</label>
+                <textarea id="txt-pg-prompt" rows="3" class="w-full bg-bg-alt border border-[#30363d] rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-cyan-500 font-mono">Tuliskan 1 pantun jenaka tentang programmer dan kopi.</textarea>
+              </div>
+
+              <button onclick="runPlaygroundTest()" id="btn-pg-submit" class="w-full py-2.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-md">
+                <span class="material-symbols-outlined text-[16px]">play_arrow</span>
+                <span>Send Request</span>
+              </button>
+            </div>
+
+            <div class="lg:col-span-2 bg-surface border border-[#30363d] rounded-xl p-5 flex flex-col">
+              <div class="flex items-center justify-between border-b border-[#30363d] pb-3 mb-3 text-xs">
+                <span class="font-bold text-white uppercase tracking-wider">Stream Output</span>
+                <span id="txt-pg-latency" class="font-mono text-gray-400">Idle</span>
+              </div>
+              <div id="txt-pg-output" class="flex-1 min-h-[320px] bg-bg-alt rounded-lg p-4 font-mono text-xs text-gray-300 overflow-y-auto whitespace-pre-wrap custom-scrollbar border border-[#30363d]">
+                Click "Send Request" to test the ultra-fast Hono pipeline live...
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- TAB 7: MODEL CATALOG                                     -->
+        <!-- ======================================================== -->
+        <div id="view-catalog" class="view-panel hidden space-y-4">
+          <div class="bg-surface border border-[#30363d] rounded-xl p-5 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 class="text-base font-semibold text-white">OpenAI Compatible Catalog</h3>
+                <p class="text-xs text-gray-400 mt-0.5">Models advertised through <code class="text-cyan-400">GET /v1/models</code></p>
+              </div>
+              <input type="text" id="inp-search-catalog" oninput="filterCatalogCards()" placeholder="Search model name..." class="w-full sm:w-64 bg-bg-alt border border-[#30363d] rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 font-mono">
+            </div>
+            <div id="grid-catalog" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[600px] overflow-y-auto custom-scrollbar pr-1"></div>
+          </div>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- TAB 8: CONSOLE LOGS                                      -->
+        <!-- ======================================================== -->
+        <div id="view-logs" class="view-panel hidden space-y-4">
+          <div class="bg-surface border border-[#30363d] rounded-xl p-5 space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-base font-semibold text-white">Recent Request Logs</h3>
+                <p class="text-xs text-gray-400 mt-0.5">Activity stream from SQLite usage history</p>
+              </div>
+              <button onclick="loadLogs()" class="px-3 py-1 bg-bg-alt hover:bg-surface-card border border-[#30363d] text-xs rounded text-white font-mono">Reload</button>
+            </div>
+            <div class="overflow-x-auto custom-scrollbar max-h-[580px] border border-[#30363d] rounded-lg">
+              <table class="w-full text-left text-xs text-white">
+                <thead class="bg-bg-alt uppercase text-[10px] text-gray-400 font-mono sticky top-0 border-b border-[#30363d]">
+                  <tr>
+                    <th class="py-2.5 px-3">Time</th>
+                    <th class="py-2.5 px-3">Provider</th>
+                    <th class="py-2.5 px-3">Model</th>
+                    <th class="py-2.5 px-3">Tokens (In / Out)</th>
+                    <th class="py-2.5 px-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="tbl-logs" class="divide-y divide-[#30363d] font-mono"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script>
+    var globalChart = null;
+    var activePeriod = 'all';
+    var accountsList = [];
+    var catalogList = [];
+
+    function showToast(msg, isErr) {
+      var c = document.getElementById('toast-container');
+      var t = document.createElement('div');
+      t.className = 'toast-animate px-3.5 py-2 rounded-lg text-xs font-mono font-medium shadow-lg border flex items-center gap-2 pointer-events-auto ' +
+        (isErr ? 'bg-red-950/90 text-red-300 border-red-800' : 'bg-emerald-950/90 text-emerald-300 border-emerald-800');
+      t.textContent = msg;
+      c.appendChild(t);
+      setTimeout(function() { t.remove(); }, 3000);
+    }
+
+    function toggleSidebar(open) {
+      var sidebar = document.getElementById('app-sidebar');
+      var overlay = document.getElementById('drawer-overlay');
+      if (open) {
+        sidebar.classList.remove('-translate-x-full');
+        overlay.classList.remove('hidden');
+      } else {
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+      }
+    }
+
+    function navigate(viewKey) {
+      var panels = document.querySelectorAll('.view-panel');
+      for (var i = 0; i < panels.length; i++) panels[i].classList.add('hidden');
+
+      var navs = document.querySelectorAll('.nav-btn');
+      for (var j = 0; j < navs.length; j++) navs[j].classList.remove('active');
+
+      var targetPanel = document.getElementById('view-' + viewKey);
+      var targetNav = document.getElementById('nav-' + viewKey);
+      if (targetPanel) targetPanel.classList.remove('hidden');
+      if (targetNav) targetNav.classList.add('active');
+
+      var titles = {
+        endpoint: 'Endpoint & Key',
+        providers: 'Providers & Accounts',
+        combos: 'Combo & Vision Adapter',
+        usage: 'Usage & Analytics',
+        tokensaver: 'Token Saver',
+        playground: 'Live Playground \u26A1',
+        catalog: 'Model Catalog',
+        logs: 'Console Log'
+      };
+      document.getElementById('top-title').textContent = titles[viewKey] || '9Router';
+
+      toggleSidebar(false);
+
+      if (viewKey === 'endpoint') loadEndpoint();
+      if (viewKey === 'providers') loadAccounts();
+      if (viewKey === 'combos') loadCombos();
+      if (viewKey === 'usage') loadUsage();
+      if (viewKey === 'tokensaver') loadTokenSaver();
+      if (viewKey === 'catalog') loadCatalog();
+      if (viewKey === 'logs') loadLogs();
+    }
+
+    function fmt(n) {
+      if (!n && n !== 0) return '0';
+      if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+      if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+      if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+      return Number(n).toLocaleString();
+    }
+
+    function changePeriod(p) {
+      activePeriod = p;
+      var periods = ['today', '7d', '30d', '60d', 'all'];
+      for (var i = 0; i < periods.length; i++) {
+        var k = periods[i];
+        var btn = document.getElementById('btn-p-' + k);
+        if (btn) {
+          if (k === p) {
+            btn.className = 'px-3 py-1 text-xs font-bold rounded bg-cyan-600 text-white shadow-sm transition-all';
+          } else {
+            btn.className = 'px-3 py-1 text-xs font-medium rounded text-gray-400 hover:text-white transition-all';
+          }
+        }
+      }
+      loadUsage();
+    }
+
+    function loadUsage() {
+      Promise.all([
+        fetch('/api/dashboard/stats?period=' + activePeriod).then(function(r) { return r.json(); }),
+        fetch('/api/dashboard/chart?period=' + activePeriod).then(function(r) { return r.json(); })
+      ]).then(function(results) {
+        var statsRes = results[0];
+        var chartRes = results[1];
+
+        if (statsRes && statsRes.stats) {
+          var s = statsRes.stats;
+          var totalPrompt = s.totalPromptTokens || 0;
+          var totalComp = s.totalCompletionTokens || 0;
+          var totalCached = s.totalCachedTokens || 0;
+          var grandTotal = totalPrompt + totalComp + totalCached;
+
+          document.getElementById('st-total-tokens').textContent = fmt(grandTotal);
+          document.getElementById('st-prompt-tokens').textContent = fmt(totalPrompt);
+          document.getElementById('st-comp-tokens').textContent = fmt(totalComp);
+          document.getElementById('st-total-requests').textContent = (s.totalRequests || 0).toLocaleString();
+          document.getElementById('st-total-cost').textContent = '$' + (s.totalCost || 0).toFixed(2);
+          document.getElementById('st-active-acc').textContent = statsRes.meta ? (statsRes.meta.totalAccounts || 0) : 0;
+          document.getElementById('badge-accounts').textContent = statsRes.meta ? (statsRes.meta.totalAccounts || 0) : 0;
+
+          // Top models
+          var modelsEl = document.getElementById('list-top-models');
+          modelsEl.innerHTML = '';
+          var sorted = Object.entries(s.byModel || {}).sort(function(a, b) {
+            return (b[1].requests || 0) - (a[1].requests || 0);
+          }).slice(0, 10);
+
+          sorted.forEach(function(item, idx) {
+            var key = item[0];
+            var m = item[1];
+            var row = document.createElement('div');
+            row.className = 'flex items-center justify-between p-2.5 rounded-lg bg-bg-alt border border-[#30363d]';
+            row.innerHTML = '<div class="flex items-center gap-2.5 min-w-0">' +
+              '<span class="size-6 rounded bg-surface-card text-cyan-400 font-mono font-bold text-xs flex items-center justify-center flex-shrink-0">' + (idx + 1) + '</span>' +
+              '<div class="truncate">' +
+                '<div class="text-xs font-semibold text-white truncate">' + (m.rawModel || key) + '</div>' +
+                '<div class="text-[10px] text-gray-400">' + (m.provider || 'default') + '</div>' +
+              '</div>' +
+            '</div>' +
+            '<div class="text-right font-mono text-xs flex-shrink-0">' +
+              '<div class="font-bold text-cyan-300">' + fmt(m.requests) + ' reqs</div>' +
+              '<div class="text-[10px] text-gray-400">' + fmt((m.promptTokens || 0) + (m.completionTokens || 0)) + ' tokens</div>' +
+            '</div>';
+            modelsEl.appendChild(row);
+          });
+
+          // Provider matrix
+          var provEl = document.getElementById('grid-providers');
+          provEl.innerHTML = '';
+          var provs = statsRes.meta ? (statsRes.meta.providers || {}) : {};
+          Object.entries(provs).sort(function(a, b) { return b[1] - a[1]; }).forEach(function(p) {
+            var card = document.createElement('div');
+            card.className = 'p-3 rounded-lg bg-bg-alt border border-[#30363d] flex flex-col justify-between';
+            card.innerHTML = '<span class="text-[11px] font-bold text-gray-400 truncate uppercase tracking-wider font-mono">' + p[0] + '</span>' +
+              '<div class="mt-2 flex items-baseline justify-between">' +
+                '<span class="text-base font-bold font-mono text-emerald-400">' + p[1] + '</span>' +
+                '<span class="text-[10px] text-gray-500 font-mono">accounts</span>' +
+              '</div>';
+            provEl.appendChild(card);
+          });
+        }
+
+        renderChart(chartRes);
+      }).catch(console.error);
+    }
+
+    function renderChart(chartData) {
+      if (!Array.isArray(chartData) || !chartData.length) return;
+      var ctx = document.getElementById('chart-canvas').getContext('2d');
+      if (globalChart) globalChart.destroy();
+
+      var labels = chartData.map(function(d) { return d.label; });
+      var tokens = chartData.map(function(d) { return d.tokens || 0; });
+
+      var gradient = ctx.createLinearGradient(0, 0, 0, 260);
+      gradient.addColorStop(0, 'rgba(6, 182, 212, 0.45)');
+      gradient.addColorStop(1, 'rgba(6, 182, 212, 0.0)');
+
+      globalChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Tokens',
+            data: tokens,
+            borderColor: '#22d3ee',
+            borderWidth: 2,
+            pointBackgroundColor: '#06b6d4',
+            pointRadius: chartData.length > 40 ? 0 : 2.5,
+            fill: true,
+            backgroundColor: gradient,
+            tension: 0.3,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#161b22',
+              titleColor: '#fff',
+              bodyColor: '#22d3ee',
+              borderColor: '#30363d',
+              borderWidth: 1,
+              padding: 10,
+              displayColors: false,
+              callbacks: {
+                label: function(c) { return 'Tokens: ' + c.raw.toLocaleString(); }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(255,255,255,0.03)' },
+              ticks: { color: '#8b949e', font: { size: 10, family: 'JetBrains Mono' }, maxTicksLimit: 12 }
+            },
+            y: {
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              ticks: {
+                color: '#8b949e',
+                font: { size: 10, family: 'JetBrains Mono' },
+                callback: function(v) { return fmt(v); }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function loadAccounts() {
+      fetch('/api/dashboard/accounts').then(function(r) { return r.json(); }).then(function(data) {
+        accountsList = data || [];
+        renderAccounts(accountsList);
+      }).catch(console.error);
+    }
+
+    function renderAccounts(list) {
+      var tbody = document.getElementById('tbl-accounts');
+      tbody.innerHTML = '';
+      list.forEach(function(a) {
+        var tr = document.createElement('tr');
+        tr.className = 'hover:bg-surface-card/60 transition-colors';
+        tr.innerHTML = '<td class="py-2.5 px-3 font-semibold text-white">' + (a.provider || '-') + '</td>' +
+          '<td class="py-2.5 px-3 text-cyan-300 font-sans truncate max-w-[200px]">' + (a.name || a.email || '-') + '</td>' +
+          '<td class="py-2.5 px-3 text-gray-400 uppercase text-[10px]">' + (a.authType || '-') + '</td>' +
+          '<td class="py-2.5 px-3">' +
+            '<button onclick="toggleAccountActive(\\'' + a.id + '\\', ' + !a.isActive + ')" class="px-2.5 py-1 rounded text-[10px] font-bold cursor-pointer transition-all ' +
+              (a.isActive ? 'bg-emerald-950 text-emerald-400 border border-emerald-800/60 hover:bg-emerald-900' : 'bg-rose-950 text-rose-400 border border-rose-800/60 hover:bg-rose-900') + '">' +
+              (a.isActive ? 'Active (Click to disable)' : 'Disabled (Click to enable)') +
+            '</button>' +
+          '</td>' +
+          '<td class="py-2.5 px-3 text-gray-400">' + (a.priority || 0) + '</td>' +
+          '<td class="py-2.5 px-3 text-gray-500 text-[10px] truncate max-w-[120px]">' + (a.id || '-') + '</td>';
+        tbody.appendChild(tr);
+      });
+    }
+
+    function toggleAccountActive(id, newState) {
+      fetch('/api/dashboard/accounts/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: id, isActive: newState })
+      }).then(function(r) { return r.json(); }).then(function(res) {
+        if (res.success) {
+          showToast('Account ' + (newState ? 'enabled' : 'disabled') + ' successfully!');
+          loadAccounts();
+        } else {
+          showToast('Failed to update account', true);
+        }
+      }).catch(function() { showToast('Network error', true); });
+    }
+
+    function filterAccounts() {
+      var q = document.getElementById('inp-search-accounts').value.toLowerCase();
+      var filtered = accountsList.filter(function(a) {
+        return (a.name || '').toLowerCase().indexOf(q) !== -1 ||
+          (a.email || '').toLowerCase().indexOf(q) !== -1 ||
+          (a.provider || '').toLowerCase().indexOf(q) !== -1;
+      });
+      renderAccounts(filtered);
+    }
+
+    function loadCatalog() {
+      fetch('/api/dashboard/models').then(function(r) { return r.json(); }).then(function(data) {
+        catalogList = data.models || [];
+        document.getElementById('badge-models').textContent = catalogList.length;
+        renderCatalog(catalogList);
+
+        var sel = document.getElementById('sel-pg-model');
+        sel.innerHTML = '';
+        catalogList.forEach(function(m) {
+          var opt = document.createElement('option');
+          opt.value = m.id;
+          opt.textContent = m.id + (m.owned_by ? ' (' + m.owned_by + ')' : '');
+          sel.appendChild(opt);
+        });
+      }).catch(console.error);
+    }
+
+    function renderCatalog(models) {
+      var container = document.getElementById('grid-catalog');
+      container.innerHTML = '';
+      models.forEach(function(m) {
+        var card = document.createElement('div');
+        card.className = 'p-3.5 rounded-lg bg-bg-alt border border-[#30363d] flex flex-col justify-between';
+        card.innerHTML = '<div>' +
+            '<div class="text-xs font-bold text-white font-mono break-all">' + m.id + '</div>' +
+            '<div class="text-[10px] text-cyan-400 mt-1 uppercase font-mono">' + (m.owned_by || '9router') + '</div>' +
+          '</div>' +
+          '<div class="mt-3 flex items-center justify-between text-[10px] text-gray-400 pt-2 border-t border-[#30363d]">' +
+            '<span>Context: ' + (m.context_length ? fmt(m.context_length) : 'N/A') + '</span>' +
+            '<button onclick="copyText(\\'' + m.id + '\\')" class="text-xs text-gray-400 hover:text-white font-mono">Copy</button>' +
+          '</div>';
+        container.appendChild(card);
+      });
+    }
+
+    function filterCatalogCards() {
+      var q = document.getElementById('inp-search-catalog').value.toLowerCase();
+      renderCatalog(catalogList.filter(function(m) { return m.id.toLowerCase().indexOf(q) !== -1; }));
+    }
+
+    function loadCombos() {
+      fetch('/api/dashboard/combos').then(function(r) { return r.json(); }).then(function(combos) {
+        var el = document.getElementById('list-combos');
+        el.innerHTML = '';
+        if (!combos || !combos.length) {
+          el.innerHTML = '<div class="text-xs text-gray-400 font-mono p-4 bg-bg-alt rounded-lg border border-[#30363d]">No custom combos configured yet. Create one above!</div>';
+          return;
+        }
+        combos.forEach(function(c) {
+          var item = document.createElement('div');
+          item.className = 'p-3.5 rounded-lg bg-bg-alt border border-[#30363d] font-mono text-xs flex items-center justify-between';
+          item.innerHTML = '<div>' +
+              '<div class="font-bold text-white mb-1">' + c.name + '</div>' +
+              '<div class="text-[11px] text-gray-400">Models: ' + (c.models || []).join(' \u2192 ') + '</div>' +
+            '</div>' +
+            '<button onclick="removeCombo(\\'' + c.id + '\\')" class="px-2.5 py-1 bg-red-950 hover:bg-red-900 border border-red-800 text-red-300 rounded text-xs font-mono">Delete</button>';
+          el.appendChild(item);
+        });
+      }).catch(console.error);
+    }
+
+    function createNewCombo() {
+      var name = document.getElementById('inp-new-combo-name').value.trim();
+      var rawModels = document.getElementById('inp-new-combo-models').value.trim();
+      if (!name || !rawModels) {
+        showToast('Please enter both name and models', true);
+        return;
+      }
+      var models = rawModels.split(',').map(function(x) { return x.trim(); }).filter(Boolean);
+      fetch('/api/dashboard/combos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name, models: models })
+      }).then(function(r) { return r.json(); }).then(function(res) {
+        if (res.success) {
+          showToast('Combo created: ' + name);
+          document.getElementById('inp-new-combo-name').value = '';
+          document.getElementById('inp-new-combo-models').value = '';
+          loadCombos();
+        } else {
+          showToast('Error: ' + (res.error || 'Failed'), true);
+        }
+      }).catch(function() { showToast('Network error', true); });
+    }
+
+    function removeCombo(id) {
+      if (!confirm('Are you sure you want to delete this combo?')) return;
+      fetch('/api/dashboard/combos/' + id, { method: 'DELETE' })
+        .then(function(r) { return r.json(); }).then(function(res) {
+          if (res.success) {
+            showToast('Combo deleted');
+            loadCombos();
+          }
+        }).catch(console.error);
+    }
+
+    function loadTokenSaver() {
+      fetch('/api/dashboard/settings').then(function(r) { return r.json(); }).then(function(settings) {
+        var el = document.getElementById('grid-tokensaver');
+        el.innerHTML = '';
+
+        var features = [
+          { key: "rtkEnabled", title: "RTK Token Saver", desc: "Compresses tool_result content in-place before upstream dispatch", active: !!settings.rtkEnabled },
+          { key: "undici", title: "Undici Keep-Alive", desc: "Persistent TLS connection pool for all upstreams cutting 1-2s TCP handshake", active: true, readonly: true },
+          { key: "antigravityDirect", title: "Antigravity Image Direct", desc: "Direct route preserving image blocks without lossy OpenAI translation", active: true, readonly: true },
+          { key: "domainBreaker", title: "Domain Circuit Breaker", desc: "Bulk-disables dead GSuite domains in <50ms after 2 failures", active: true, readonly: true },
+          { key: "headroomEnabled", title: "Headroom Optimizer", desc: "Context compressor service integration", active: !!settings.headroomEnabled },
+          { key: "toolSanitizer", title: "Tool Args Sanitizer", desc: "Normalizes invalid JSON schema parameters for Claude Code models", active: true, readonly: true }
+        ];
+
+        features.forEach(function(f) {
+          var card = document.createElement('div');
+          card.className = 'p-3.5 rounded-lg bg-bg-alt border border-[#30363d] flex items-start justify-between gap-2';
+          card.innerHTML = '<div>' +
+              '<div class="font-bold text-white">' + f.title + '</div>' +
+              '<div class="text-[10px] text-gray-400 mt-1 font-sans">' + f.desc + '</div>' +
+            '</div>' +
+            (f.readonly ?
+              '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-950 text-cyan-400 border border-cyan-800/60 font-mono">PERMANENT</span>' :
+              '<button onclick="toggleSetting(\\'' + f.key + '\\', ' + !f.active + ')" class="px-2.5 py-1 rounded text-[10px] font-bold cursor-pointer font-mono ' +
+                (f.active ? 'bg-emerald-950 text-emerald-400 border border-emerald-800/60 hover:bg-emerald-900' : 'bg-gray-800 text-gray-400 hover:bg-gray-700') + '">' +
+                (f.active ? 'ENABLED' : 'DISABLED') +
+              '</button>'
+            );
+          el.appendChild(card);
+        });
+      }).catch(console.error);
+    }
+
+    function toggleSetting(key, val) {
+      var payload = {};
+      payload[key] = val;
+      fetch('/api/dashboard/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).then(function(r) { return r.json(); }).then(function(res) {
+        if (res.success) {
+          showToast('Setting updated: ' + key);
+          loadTokenSaver();
+        }
+      }).catch(console.error);
+    }
+
+    function loadEndpoint() {
+      fetch('/api/dashboard/keys').then(function(r) { return r.json(); }).then(function(keys) {
+        var el = document.getElementById('list-keys');
+        el.innerHTML = '';
+        if (!keys || !keys.length) {
+          el.innerHTML = '<div class="text-gray-500 p-3 bg-bg-alt rounded-lg border border-[#30363d]">No API keys registered. Create one above if requireApiKey is enabled.</div>';
+          return;
+        }
+        keys.forEach(function(k) {
+          var item = document.createElement('div');
+          item.className = 'p-3 rounded-lg bg-bg-alt border border-[#30363d] flex items-center justify-between';
+          item.innerHTML = '<div>' +
+              '<div class="text-white font-semibold">' + (k.name || 'API Key') + '</div>' +
+              '<div class="text-gray-400 text-[11px]">' + (k.key ? k.key.slice(0, 10) + '...' + k.key.slice(-4) : '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022') + '</div>' +
+            '</div>' +
+            '<div class="flex items-center gap-2">' +
+              '<button onclick="copyText(\\'' + k.key + '\\')" class="px-2.5 py-1 bg-surface-card hover:bg-surface-hover rounded text-xs text-white">Copy</button>' +
+              '<button onclick="deleteKey(\\'' + k.id + '\\')" class="px-2.5 py-1 bg-red-950 hover:bg-red-900 border border-red-800 text-red-300 rounded text-xs">Delete</button>' +
+            '</div>';
+          el.appendChild(item);
+        });
+      }).catch(console.error);
+    }
+
+    function createNewApiKey() {
+      var name = document.getElementById('inp-new-key-name').value.trim();
+      fetch('/api/dashboard/keys', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name || "API Key" })
+      }).then(function(r) { return r.json(); }).then(function(res) {
+        if (res.success) {
+          showToast('API Key created: ' + res.key.key);
+          document.getElementById('inp-new-key-name').value = '';
+          loadEndpoint();
+        }
+      }).catch(console.error);
+    }
+
+    function deleteKey(id) {
+      if (!confirm('Are you sure you want to delete this API Key?')) return;
+      fetch('/api/dashboard/keys/' + id, { method: 'DELETE' })
+        .then(function(r) { return r.json(); }).then(function(res) {
+          if (res.success) {
+            showToast('API Key deleted');
+            loadEndpoint();
+          }
+        }).catch(console.error);
+    }
+
+    function loadLogs() {
+      fetch('/api/dashboard/logs?limit=80').then(function(r) { return r.json(); }).then(function(logs) {
+        var tbody = document.getElementById('tbl-logs');
+        tbody.innerHTML = '';
+        (logs || []).forEach(function(l) {
+          var tr = document.createElement('tr');
+          tr.className = 'hover:bg-surface-card/50';
+          tr.innerHTML = '<td class="py-2 px-3 text-gray-400 text-[10px] whitespace-nowrap">' + (l.timestamp ? new Date(l.timestamp).toLocaleTimeString() : '-') + '</td>' +
+            '<td class="py-2 px-3 font-semibold text-white">' + (l.provider || '-') + '</td>' +
+            '<td class="py-2 px-3 text-cyan-400 truncate max-w-[220px]">' + (l.model || '-') + '</td>' +
+            '<td class="py-2 px-3 text-gray-300">' + fmt(l.promptTokens || 0) + ' / ' + fmt(l.completionTokens || 0) + '</td>' +
+            '<td class="py-2 px-3"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-950 text-emerald-400">' + (l.status || 'OK') + '</span></td>';
+          tbody.appendChild(tr);
+        });
+      }).catch(console.error);
+    }
+
+    function runPlaygroundTest() {
+      var btn = document.getElementById('btn-pg-submit');
+      var lat = document.getElementById('txt-pg-latency');
+      var out = document.getElementById('txt-pg-output');
+      var model = document.getElementById('sel-pg-model').value;
+      var protocol = document.getElementById('sel-pg-proto').value;
+      var system = document.getElementById('txt-pg-system').value;
+      var prompt = document.getElementById('txt-pg-prompt').value;
+
+      btn.disabled = true;
+      lat.textContent = 'Streaming...';
+      out.textContent = '';
+
+      var payload = {};
+      if (protocol.indexOf('messages') !== -1) {
+        payload = { model: model, max_tokens: 1024, system: system, messages: [{ role: 'user', content: prompt }] };
+      } else {
+        payload = { model: model, messages: [{ role: 'system', content: system }, { role: 'user', content: prompt }] };
+      }
+
+      var t0 = performance.now();
+      fetch(protocol, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).then(function(res) {
+        var elapsed = (performance.now() - t0).toFixed(1);
+        lat.textContent = 'HTTP ' + res.status + ' (' + elapsed + 'ms)';
+
+        if (!res.ok) {
+          return res.text().then(function(txt) {
+            out.textContent = 'Error: ' + txt;
+          });
+        }
+
+        return res.json().then(function(data) {
+          out.textContent = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) ||
+            (data.content && data.content[0] && data.content[0].text) ||
+            JSON.stringify(data, null, 2);
+        });
+      }).catch(function(err) {
+        lat.textContent = 'Error';
+        out.textContent = 'Fetch failed: ' + err.message;
+      }).finally(function() {
+        btn.disabled = false;
+      });
+    }
+
+    function copyText(text) {
+      navigator.clipboard.writeText(text);
+      showToast('Copied to clipboard: ' + text);
+    }
+
+    function refreshCurrent() {
+      loadEndpoint();
+      loadAccounts();
+      loadCatalog();
+      loadUsage();
+      showToast('Dashboard reloaded');
+    }
+
+    if (typeof window !== 'undefined' && window.location.port) {
+      document.getElementById('port-label').textContent = window.location.port;
+      var base = window.location.protocol + '//' + window.location.hostname + ':' + window.location.port;
+      document.getElementById('lbl-openai-url').textContent = base + '/v1';
+      document.getElementById('lbl-claude-url').textContent = base + '/v1';
+    }
+
+    loadEndpoint();
+    loadAccounts();
+    loadCatalog();
+    loadUsage();
+  </script>
+</body>
+</html>
+`;
+
 // src/honoGateway.js
 await initTranslators();
 var honoApp = new Hono();
+registerDashboardRoutes(honoApp);
+honoApp.get("/dashboard", (c) => c.html(dashboard_default));
+honoApp.get("/", (c) => {
+  const accept = c.req.header("accept") || "";
+  if (accept.includes("text/html")) {
+    return c.html(dashboard_default);
+  }
+  return c.json({
+    name: "9router-hono",
+    status: "running",
+    engine: "Hono (Sub-Millisecond Engine)",
+    dashboard: "/dashboard"
+  });
+});
 honoApp.post("/v1/chat/completions", async (c) => handleChat(c.req.raw));
 honoApp.post("/api/v1/chat/completions", async (c) => handleChat(c.req.raw));
 honoApp.post("/v1/messages", async (c) => handleChat(c.req.raw));
