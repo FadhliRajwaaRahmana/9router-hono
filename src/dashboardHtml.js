@@ -3,10 +3,11 @@ export const DASHBOARD_HTML = `<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>9Router Hono — Ultra-Fast Control Plane</title>
+  <title>9Router Hono — Control Plane</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -15,7 +16,7 @@ export const DASHBOARD_HTML = `<!DOCTYPE html>
       theme: {
         extend: {
           fontFamily: {
-            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            sans: ['"Inter"', 'sans-serif'],
             mono: ['"JetBrains Mono"', 'monospace'],
           },
           colors: {
@@ -25,18 +26,18 @@ export const DASHBOARD_HTML = `<!DOCTYPE html>
               400: '#22d3ee',
               500: '#06b6d4',
               600: '#0891b2',
+              700: '#0e7490',
             },
-            surface: {
-              50: '#18181b',
-              100: '#27272a',
-              200: '#3f3f46',
-              800: '#09090b',
-              900: '#030712',
+            bg: {
+              DEFAULT: '#09090b',
+              subtle: '#121215',
+              card: '#18181b',
+              elevated: '#27272a',
+            },
+            border: {
+              subtle: 'rgba(255, 255, 255, 0.08)',
+              hover: 'rgba(6, 182, 212, 0.4)',
             }
-          },
-          boxShadow: {
-            'glow-cyan': '0 0 25px -5px rgba(6, 182, 212, 0.35)',
-            'glow-emerald': '0 0 25px -5px rgba(16, 185, 129, 0.35)',
           }
         }
       }
@@ -44,411 +45,582 @@ export const DASHBOARD_HTML = `<!DOCTYPE html>
   </script>
   <style>
     body {
-      background: radial-gradient(circle at 50% 0%, #0d1e2e 0%, #030712 60%);
-      color: #f3f4f6;
-      min-height: 100vh;
+      background-color: #09090b;
+      color: #f4f4f5;
     }
-    .glass-card {
-      background: rgba(18, 24, 38, 0.7);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 22;
+      vertical-align: middle;
     }
-    .glass-nav {
-      background: rgba(3, 7, 18, 0.85);
-      backdrop-filter: blur(20px);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
     }
-    .custom-scroll::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
     }
-    .custom-scroll::-webkit-scrollbar-track {
-      background: rgba(0,0,0,0.2);
-    }
-    .custom-scroll::-webkit-scrollbar-thumb {
-      background: rgba(255,255,255,0.15);
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.12);
       border-radius: 9999px;
     }
-    .custom-scroll::-webkit-scrollbar-thumb:hover {
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
       background: rgba(6, 182, 212, 0.5);
     }
-    @keyframes pulse-dot {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.5; transform: scale(1.15); }
+    .landing-grid {
+      background-size: 32px 32px;
+      background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                        linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
     }
-    .animate-pulse-dot {
-      animation: pulse-dot 2s infinite ease-in-out;
+    .nav-item.active {
+      background: rgba(6, 182, 212, 0.12);
+      color: #22d3ee;
+      border-left: 3px solid #06b6d4;
+    }
+    @keyframes pulse-subms {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.2); opacity: 0.6; }
+    }
+    .animate-subms {
+      animation: pulse-subms 2s infinite ease-in-out;
     }
   </style>
 </head>
-<body class="font-sans antialiased selection:bg-brand-500 selection:text-black">
+<body class="flex h-screen w-full overflow-hidden antialiased selection:bg-brand-500 selection:text-black">
 
-  <!-- Top App Navigation -->
-  <header class="sticky top-0 z-50 glass-nav px-4 lg:px-8 py-3.5 flex items-center justify-between">
-    <div class="flex items-center gap-3">
-      <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-brand-600 via-cyan-400 to-emerald-400 flex items-center justify-center shadow-glow-cyan">
-        <svg class="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-        </svg>
+  <!-- Mobile Sidebar Backdrop Overlay -->
+  <div id="sidebar-overlay" onclick="toggleSidebar(false)" class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden hidden transition-opacity duration-300"></div>
+
+  <!-- Left Sidebar (Aligned with 9Router-fix style + Modern Touches) -->
+  <aside id="main-sidebar" class="fixed lg:static inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border-subtle bg-bg-subtle backdrop-blur-xl transition-transform duration-300 -translate-x-full lg:translate-x-0">
+    
+    <!-- Mac-style Traffic lights & App header -->
+    <div class="px-5 pt-4 pb-3 border-b border-border-subtle">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-1.5">
+          <div class="w-3 h-3 rounded-full bg-[#FF5F56] shadow-sm"></div>
+          <div class="w-3 h-3 rounded-full bg-[#FFBD2E] shadow-sm"></div>
+          <div class="w-3 h-3 rounded-full bg-[#27C93F] shadow-sm"></div>
+        </div>
+        <button onclick="toggleSidebar(false)" class="lg:hidden text-gray-400 hover:text-white p-1">
+          <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
       </div>
-      <div>
-        <div class="flex items-center gap-2">
-          <span class="font-extrabold text-lg tracking-tight bg-gradient-to-r from-white via-gray-100 to-cyan-300 bg-clip-text text-transparent">9Router Hono</span>
-          <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800/60 uppercase tracking-widest font-mono">v0.1.0</span>
-          <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800/60 flex items-center gap-1.5 font-mono">
-            <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse-dot"></span>
-            SUB-MS
+
+      <div class="flex items-center gap-2.5">
+        <div class="flex items-center justify-center size-8 rounded-lg bg-gradient-to-br from-brand-500 to-cyan-700 shadow-md">
+          <span class="material-symbols-outlined text-black text-[20px] font-bold">bolt</span>
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <span class="font-bold text-sm text-white tracking-tight">9Router Hono</span>
+            <span class="px-1.5 py-0.5 text-[9px] font-mono font-bold rounded bg-cyan-950 text-cyan-400 border border-cyan-800/40">v0.2.0</span>
+          </div>
+          <span class="text-[11px] text-gray-400 font-mono flex items-center gap-1">
+            <span class="size-1.5 rounded-full bg-emerald-400 animate-subms"></span>
+            Hono Core (<span id="sidebar-port">20129</span>)
           </span>
         </div>
-        <p class="text-xs text-gray-400 hidden sm:block">Ultra-Fast Headless Routing Engine & Telemetry</p>
       </div>
     </div>
 
-    <!-- Desktop Navigation Tabs -->
-    <nav class="hidden md:flex items-center gap-1 bg-gray-900/80 p-1.5 rounded-xl border border-white/5">
-      <button onclick="switchTab('overview')" id="tab-btn-overview" class="tab-btn px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 bg-brand-500 text-black shadow-glow-cyan">
-        Overview
-      </button>
-      <button onclick="switchTab('accounts')" id="tab-btn-accounts" class="tab-btn px-4 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-white transition-all duration-200">
-        Accounts (<span id="nav-acc-count">0</span>)
-      </button>
-      <button onclick="switchTab('models')" id="tab-btn-models" class="tab-btn px-4 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-white transition-all duration-200">
-        Catalog (<span id="nav-model-count">0</span>)
-      </button>
-      <button onclick="switchTab('playground')" id="tab-btn-playground" class="tab-btn px-4 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-white transition-all duration-200">
-        Playground ⚡
-      </button>
-      <button onclick="switchTab('logs')" id="tab-btn-logs" class="tab-btn px-4 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-white transition-all duration-200">
-        Live Logs
-      </button>
-    </nav>
-
-    <!-- Header Actions -->
-    <div class="flex items-center gap-2">
-      <button onclick="fetchData()" class="p-2 rounded-xl bg-gray-800/60 hover:bg-gray-700/80 text-gray-300 hover:text-white border border-white/5 transition-all text-xs flex items-center gap-1.5">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-        </svg>
-        <span class="hidden sm:inline">Refresh</span>
-      </button>
-    </div>
-  </header>
-
-  <!-- Mobile Bottom Navigation Bar -->
-  <div class="md:hidden fixed bottom-0 left-0 right-0 z-50 glass-nav px-3 py-2 flex justify-around border-t border-white/10">
-    <button onclick="switchTab('overview')" class="flex flex-col items-center gap-1 text-[11px] text-brand-400">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-      Overview
-    </button>
-    <button onclick="switchTab('accounts')" class="flex flex-col items-center gap-1 text-[11px] text-gray-400">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-      Accounts
-    </button>
-    <button onclick="switchTab('models')" class="flex flex-col items-center gap-1 text-[11px] text-gray-400">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-      Models
-    </button>
-    <button onclick="switchTab('playground')" class="flex flex-col items-center gap-1 text-[11px] text-gray-400">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-      Playground
-    </button>
-    <button onclick="switchTab('logs')" class="flex flex-col items-center gap-1 text-[11px] text-gray-400">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-      Logs
-    </button>
-  </div>
-
-  <!-- Main Content Body -->
-  <main class="max-w-7xl mx-auto px-4 lg:px-8 py-6 pb-24 md:pb-12">
-
-    <!-- TAB 1: OVERVIEW -->
-    <section id="tab-overview" class="space-y-6">
-
-      <!-- Hero Metrics Bar -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 lg:gap-4">
-        
-        <div class="glass-card rounded-2xl p-4 lg:p-5 relative overflow-hidden group">
-          <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-cyan-500/10 rounded-full blur-xl group-hover:bg-cyan-500/20 transition-all"></div>
-          <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1 flex items-center justify-between">
-            <span>Total Tokens</span>
-            <span class="text-cyan-400 text-sm">✦</span>
-          </div>
-          <div id="stat-total-tokens" class="text-xl lg:text-2xl font-black tracking-tight text-white font-mono">...</div>
-          <div class="mt-2 text-[11px] text-gray-400 flex items-center gap-1 font-mono">
-            <span id="stat-prompt-tokens" class="text-cyan-400">0</span> in · <span id="stat-comp-tokens" class="text-emerald-400">0</span> out
-          </div>
-        </div>
-
-        <div class="glass-card rounded-2xl p-4 lg:p-5 relative overflow-hidden group">
-          <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-emerald-500/10 rounded-full blur-xl group-hover:bg-emerald-500/20 transition-all"></div>
-          <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1 flex items-center justify-between">
-            <span>Total Requests</span>
-            <span class="text-emerald-400 text-sm">⚡</span>
-          </div>
-          <div id="stat-total-requests" class="text-xl lg:text-2xl font-black tracking-tight text-white font-mono">...</div>
-          <div class="mt-2 text-[11px] text-gray-400 font-mono">
-            Across <span id="stat-account-pool" class="text-white font-bold">0</span> Accounts
-          </div>
-        </div>
-
-        <div class="glass-card rounded-2xl p-4 lg:p-5 relative overflow-hidden group">
-          <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-violet-500/10 rounded-full blur-xl group-hover:bg-violet-500/20 transition-all"></div>
-          <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1 flex items-center justify-between">
-            <span>Total Saved Value</span>
-            <span class="text-violet-400 text-sm">$</span>
-          </div>
-          <div id="stat-total-cost" class="text-xl lg:text-2xl font-black tracking-tight text-white font-mono">$0.00</div>
-          <div class="mt-2 text-[11px] text-gray-400 font-mono">
-            Estimated API Equivalent
-          </div>
-        </div>
-
-        <div class="glass-card rounded-2xl p-4 lg:p-5 relative overflow-hidden group">
-          <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-amber-500/10 rounded-full blur-xl group-hover:bg-amber-500/20 transition-all"></div>
-          <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1 flex items-center justify-between">
-            <span>Proxy Latency</span>
-            <span class="text-amber-400 text-sm">⏱</span>
-          </div>
-          <div class="text-xl lg:text-2xl font-black tracking-tight text-amber-300 font-mono">&lt; 0.45 ms</div>
-          <div class="mt-2 text-[11px] text-emerald-400 font-mono flex items-center gap-1">
-            <span>●</span> Hono Native Routing
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Main Chart Section -->
-      <div class="glass-card rounded-2xl p-5 lg:p-6">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
-          <div>
-            <h2 class="text-base font-bold text-white tracking-tight flex items-center gap-2">
-              <span>Token Throughput & Timeline</span>
-            </h2>
-            <p class="text-xs text-gray-400">Aggregated token volume over time from shared SQLite ledger</p>
-          </div>
-          
-          <!-- Period Selector Filter -->
-          <div class="inline-flex bg-gray-950 p-1 rounded-xl border border-white/5 self-start sm:self-auto">
-            <button onclick="setPeriod('today')" id="period-today" class="period-btn px-3 py-1 text-xs font-medium rounded-lg text-gray-400 hover:text-white transition-all">Today</button>
-            <button onclick="setPeriod('7d')" id="period-7d" class="period-btn px-3 py-1 text-xs font-medium rounded-lg text-gray-400 hover:text-white transition-all">7D</button>
-            <button onclick="setPeriod('30d')" id="period-30d" class="period-btn px-3 py-1 text-xs font-medium rounded-lg text-gray-400 hover:text-white transition-all">30D</button>
-            <button onclick="setPeriod('all')" id="period-all" class="period-btn px-3 py-1 text-xs font-semibold rounded-lg bg-brand-500 text-black shadow-glow-cyan transition-all">All Time</button>
-          </div>
-        </div>
-
-        <div class="h-[260px] lg:h-[320px] w-full">
-          <canvas id="usageChart"></canvas>
-        </div>
-      </div>
-
-      <!-- Models & Providers Grid Breakdown -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-        <!-- Top Models -->
-        <div class="glass-card rounded-2xl p-5 lg:p-6">
-          <h3 class="text-sm font-bold text-white uppercase tracking-wider mb-4 flex items-center justify-between">
-            <span>Top Models by Volume</span>
-            <span class="text-xs text-cyan-400 font-mono font-normal">Ranked by Requests</span>
-          </h3>
-          <div id="models-rank-list" class="space-y-3 custom-scroll max-h-[380px] overflow-y-auto pr-2">
-            <!-- Dynamically populated -->
-          </div>
-        </div>
-
-        <!-- Provider Accounts Pool Matrix -->
-        <div class="glass-card rounded-2xl p-5 lg:p-6">
-          <h3 class="text-sm font-bold text-white uppercase tracking-wider mb-4 flex items-center justify-between">
-            <span>Provider Connection Matrix</span>
-            <span class="text-xs text-emerald-400 font-mono font-normal">Active Failover Pool</span>
-          </h3>
-          <div id="providers-matrix-list" class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-[380px] overflow-y-auto pr-2 custom-scroll">
-            <!-- Dynamically populated -->
-          </div>
-        </div>
-
-      </div>
-
-    </section>
-
-
-    <!-- TAB 2: ACCOUNTS -->
-    <section id="tab-accounts" class="hidden space-y-4">
-      <div class="glass-card rounded-2xl p-5 lg:p-6">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-          <div>
-            <h2 class="text-base font-bold text-white tracking-tight">Active Accounts Pool</h2>
-            <p class="text-xs text-gray-400">All provider credentials loaded seamlessly from <code class="text-cyan-400">~/.9router/db/data.sqlite</code></p>
-          </div>
-          <div class="w-full sm:w-64">
-            <input type="text" id="account-search" oninput="filterAccounts()" placeholder="Filter accounts by email/name..." class="w-full bg-gray-950/80 border border-white/10 rounded-xl px-3.5 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition-all">
-          </div>
-        </div>
-
-        <div class="overflow-x-auto custom-scroll max-h-[600px]">
-          <table class="w-full text-left text-xs text-gray-300">
-            <thead class="bg-gray-950/60 uppercase text-[10px] text-gray-400 font-mono sticky top-0 backdrop-blur-md">
-              <tr>
-                <th class="py-3 px-3">Provider</th>
-                <th class="py-3 px-3">Identity / Name</th>
-                <th class="py-3 px-3">Auth Type</th>
-                <th class="py-3 px-3">Status</th>
-                <th class="py-3 px-3">Priority</th>
-                <th class="py-3 px-3">Account ID</th>
-              </tr>
-            </thead>
-            <tbody id="accounts-table-body" class="divide-y divide-white/5 font-mono">
-              <!-- Dynamically populated -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-
-    <!-- TAB 3: MODELS CATALOG -->
-    <section id="tab-models" class="hidden space-y-4">
-      <div class="glass-card rounded-2xl p-5 lg:p-6">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-          <div>
-            <h2 class="text-base font-bold text-white tracking-tight">OpenAI Compatible Model Catalog</h2>
-            <p class="text-xs text-gray-400">Registered and combo models available through <code class="text-cyan-400">/v1/models</code></p>
-          </div>
-          <div class="w-full sm:w-64">
-            <input type="text" id="model-search" oninput="filterCatalog()" placeholder="Search model id..." class="w-full bg-gray-950/80 border border-white/10 rounded-xl px-3.5 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition-all">
-          </div>
-        </div>
-
-        <div id="catalog-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[600px] overflow-y-auto pr-2 custom-scroll">
-          <!-- Dynamically populated -->
-        </div>
-      </div>
-    </section>
-
-
-    <!-- TAB 4: PLAYGROUND ⚡ -->
-    <section id="tab-playground" class="hidden space-y-4">
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-        <!-- Controls Column -->
-        <div class="glass-card rounded-2xl p-5 lg:p-6 space-y-4">
-          <h2 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-            <span>Playground Config</span>
-            <span class="text-cyan-400 text-xs">⚡ Direct Hono Fast-Path</span>
-          </h2>
-
-          <div>
-            <label class="block text-xs font-semibold text-gray-400 mb-1">Target Model</label>
-            <select id="play-model" class="w-full bg-gray-950 border border-white/10 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-cyan-500">
-              <option value="gemini-3.8-flash-high">gemini-3.8-flash-high (Antigravity)</option>
-              <option value="gemini-3.7-flash-high">gemini-3.7-flash-high (Antigravity)</option>
-              <option value="claude-opus-4-6-thinking">claude-opus-4-6-thinking (Antigravity)</option>
-              <option value="deepseek-v4-flash">deepseek-v4-flash (Fast)</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-gray-400 mb-1">API Endpoint Protocol</label>
-            <select id="play-endpoint" class="w-full bg-gray-950 border border-white/10 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-cyan-500">
-              <option value="/v1/chat/completions">POST /v1/chat/completions (OpenAI Format)</option>
-              <option value="/v1/messages">POST /v1/messages (Claude Format)</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-gray-400 mb-1">9Router API Key (if required)</label>
-            <input type="password" id="play-key" placeholder="Optional if requireApiKey=false" class="w-full bg-gray-950 border border-white/10 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-cyan-500">
-          </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-gray-400 mb-1">System Prompt</label>
-            <textarea id="play-system" rows="2" class="w-full bg-gray-950 border border-white/10 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-cyan-500">You are a helpful, terse AI assistant running on 9router-hono.</textarea>
-          </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-gray-400 mb-1">User Message</label>
-            <textarea id="play-prompt" rows="4" class="w-full bg-gray-950 border border-white/10 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-cyan-500">Tuliskan pantun jenaka 2 bait tentang kecepatan internet.</textarea>
-          </div>
-
-          <button onclick="runPlayground()" id="play-submit-btn" class="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-400 text-black font-bold text-xs uppercase tracking-wider hover:opacity-90 transition-all shadow-glow-cyan flex items-center justify-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-            Send Request
+    <!-- Navigation Links -->
+    <div class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-6">
+      
+      <!-- Primary Section -->
+      <div>
+        <div class="px-3 mb-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400 font-mono">Routing & Telemetry</div>
+        <nav class="space-y-0.5">
+          <button onclick="navigate('usage')" id="nav-usage" class="nav-item active w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-gray-300 hover:bg-white/5 transition-all text-left">
+            <span class="material-symbols-outlined text-[18px]">bar_chart</span>
+            <span>Usage & Analytics</span>
           </button>
-        </div>
-
-        <!-- Output Column -->
-        <div class="lg:col-span-2 glass-card rounded-2xl p-5 lg:p-6 flex flex-col">
-          <div class="flex items-center justify-between border-b border-white/5 pb-3 mb-4">
-            <h3 class="text-sm font-bold text-white uppercase tracking-wider">Stream Response</h3>
-            <span id="play-status" class="text-xs font-mono text-gray-400">Idle</span>
-          </div>
-
-          <div id="play-output" class="flex-1 min-h-[350px] bg-gray-950/80 rounded-xl p-4 font-mono text-xs text-gray-200 overflow-y-auto whitespace-pre-wrap custom-scroll border border-white/5">
-            Click "Send Request" to test the ultra-fast Hono pipeline live...
-          </div>
-        </div>
-
+          <button onclick="navigate('providers')" id="nav-providers" class="nav-item w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-gray-300 hover:bg-white/5 transition-all text-left">
+            <div class="flex items-center gap-2.5">
+              <span class="material-symbols-outlined text-[18px]">dns</span>
+              <span>Providers & Accounts</span>
+            </div>
+            <span id="nav-badge-accounts" class="px-1.5 py-0.5 text-[10px] font-mono rounded bg-gray-800 text-gray-300 font-bold">...</span>
+          </button>
+          <button onclick="navigate('endpoint')" id="nav-endpoint" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-gray-300 hover:bg-white/5 transition-all text-left">
+            <span class="material-symbols-outlined text-[18px]">api</span>
+            <span>Endpoint & Keys</span>
+          </button>
+          <button onclick="navigate('combos')" id="nav-combos" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-gray-300 hover:bg-white/5 transition-all text-left">
+            <span class="material-symbols-outlined text-[18px]">layers</span>
+            <span>Combos & Adapters</span>
+          </button>
+          <button onclick="navigate('tokensaver')" id="nav-tokensaver" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-gray-300 hover:bg-white/5 transition-all text-left">
+            <span class="material-symbols-outlined text-[18px]">savings</span>
+            <span>Token Saver</span>
+          </button>
+        </nav>
       </div>
-    </section>
 
+      <!-- Developer & Diagnostics Section -->
+      <div>
+        <div class="px-3 mb-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400 font-mono">Developer Tools</div>
+        <nav class="space-y-0.5">
+          <button onclick="navigate('playground')" id="nav-playground" class="nav-item w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-gray-300 hover:bg-white/5 transition-all text-left">
+            <div class="flex items-center gap-2.5">
+              <span class="material-symbols-outlined text-[18px]">terminal</span>
+              <span>Live Playground</span>
+            </div>
+            <span class="px-1.5 py-0.5 text-[9px] font-mono font-bold rounded bg-cyan-950 text-cyan-400">FAST</span>
+          </button>
+          <button onclick="navigate('catalog')" id="nav-catalog" class="nav-item w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-gray-300 hover:bg-white/5 transition-all text-left">
+            <div class="flex items-center gap-2.5">
+              <span class="material-symbols-outlined text-[18px]">inventory_2</span>
+              <span>Model Catalog</span>
+            </div>
+            <span id="nav-badge-models" class="px-1.5 py-0.5 text-[10px] font-mono rounded bg-gray-800 text-gray-300 font-bold">...</span>
+          </button>
+          <button onclick="navigate('logs')" id="nav-logs" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-gray-300 hover:bg-white/5 transition-all text-left">
+            <span class="material-symbols-outlined text-[18px]">description</span>
+            <span>Console Logs</span>
+          </button>
+        </nav>
+      </div>
 
-    <!-- TAB 5: LIVE LOGS -->
-    <section id="tab-logs" class="hidden space-y-4">
-      <div class="glass-card rounded-2xl p-5 lg:p-6">
-        <div class="flex items-center justify-between mb-4">
-          <div>
-            <h2 class="text-base font-bold text-white tracking-tight">Recent Request Logs</h2>
-            <p class="text-xs text-gray-400">Real-time ledger events recorded by 9router core</p>
+    </div>
+
+    <!-- Footer Local Storage indicator (Matches 9Router style) -->
+    <div class="p-3 border-t border-border-subtle bg-bg-card/50">
+      <div class="flex items-center justify-between text-xs text-gray-400 px-2 py-1">
+        <div class="flex items-center gap-2">
+          <span class="size-2 rounded-full bg-emerald-400"></span>
+          <span class="font-medium text-[11px] text-gray-300">Local Mode</span>
+        </div>
+        <span class="text-[10px] font-mono text-cyan-400">SQLite Active</span>
+      </div>
+      <div class="px-2 text-[10px] text-gray-400 truncate font-mono mt-0.5">
+        ~/.9router/db/data.sqlite
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content Wrapper -->
+  <div class="flex-1 flex flex-col min-w-0 h-full relative isolate">
+    <!-- Faint background pattern -->
+    <div class="landing-grid absolute inset-0 pointer-events-none -z-10" aria-hidden="true"></div>
+
+    <!-- Top Navigation Bar -->
+    <header class="h-14 border-b border-border-subtle bg-bg-subtle/80 backdrop-blur-md px-4 lg:px-8 flex items-center justify-between z-10">
+      <div class="flex items-center gap-3">
+        <button onclick="toggleSidebar(true)" class="lg:hidden p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5">
+          <span class="material-symbols-outlined">menu</span>
+        </button>
+        <div>
+          <h1 id="page-title" class="text-sm font-bold text-white tracking-tight flex items-center gap-2">
+            Usage & Analytics
+          </h1>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2.5">
+        <span class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-800/40 text-xs font-mono font-medium">
+          <span class="size-1.5 rounded-full bg-emerald-400 animate-subms"></span>
+          Latency &lt; 0.5ms
+        </span>
+        <button onclick="refreshAll()" class="p-2 rounded-lg bg-bg-card hover:bg-bg-elevated border border-border-subtle text-gray-300 hover:text-white transition-all text-xs flex items-center gap-1.5 shadow-sm">
+          <span class="material-symbols-outlined text-[16px]">refresh</span>
+          <span class="hidden sm:inline text-xs font-medium">Refresh</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Scrollable Workspace Views -->
+    <main class="flex-1 overflow-y-auto custom-scrollbar p-4 lg:p-8">
+      <div class="max-w-7xl mx-auto space-y-6">
+
+        <!-- ======================================================== -->
+        <!-- VIEW 1: USAGE & ANALYTICS (Matches 9router-fix usage)   -->
+        <!-- ======================================================== -->
+        <div id="view-usage" class="view-panel space-y-6">
+          
+          <!-- Metric Cards -->
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <div class="bg-bg-card border border-border-subtle rounded-xl p-4 shadow-sm relative overflow-hidden">
+              <div class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1 flex items-center justify-between">
+                <span>Total Tokens</span>
+                <span class="material-symbols-outlined text-[18px] text-cyan-400">auto_awesome</span>
+              </div>
+              <div id="u-total-tokens" class="text-xl lg:text-2xl font-bold font-mono text-white">...</div>
+              <div class="mt-2 text-[11px] text-gray-400 font-mono truncate">
+                <span id="u-prompt-tokens" class="text-cyan-400">0</span> in · <span id="u-comp-tokens" class="text-emerald-400">0</span> out
+              </div>
+            </div>
+
+            <div class="bg-bg-card border border-border-subtle rounded-xl p-4 shadow-sm relative overflow-hidden">
+              <div class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1 flex items-center justify-between">
+                <span>Total Requests</span>
+                <span class="material-symbols-outlined text-[18px] text-emerald-400">bolt</span>
+              </div>
+              <div id="u-total-requests" class="text-xl lg:text-2xl font-bold font-mono text-white">...</div>
+              <div class="mt-2 text-[11px] text-gray-400 font-mono">
+                Across <span id="u-accounts-count" class="text-white font-bold">0</span> Accounts
+              </div>
+            </div>
+
+            <div class="bg-bg-card border border-border-subtle rounded-xl p-4 shadow-sm relative overflow-hidden">
+              <div class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1 flex items-center justify-between">
+                <span>Estimated Value</span>
+                <span class="material-symbols-outlined text-[18px] text-violet-400">attach_money</span>
+              </div>
+              <div id="u-total-cost" class="text-xl lg:text-2xl font-bold font-mono text-white">$0.00</div>
+              <div class="mt-2 text-[11px] text-gray-400 font-mono">
+                API Equivalent Saved
+              </div>
+            </div>
+
+            <div class="bg-bg-card border border-border-subtle rounded-xl p-4 shadow-sm relative overflow-hidden">
+              <div class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1 flex items-center justify-between">
+                <span>Routing Engine</span>
+                <span class="material-symbols-outlined text-[18px] text-amber-400">speed</span>
+              </div>
+              <div class="text-xl lg:text-2xl font-bold font-mono text-amber-300">&lt; 0.45 ms</div>
+              <div class="mt-2 text-[11px] text-emerald-400 font-mono">
+                Hono RegExpRouter Native
+              </div>
+            </div>
           </div>
-          <button onclick="loadLogs()" class="px-3 py-1 bg-gray-800 hover:bg-gray-700 text-xs rounded-lg text-white font-mono transition-all">Reload</button>
+
+          <!-- Usage Timeline Chart Card -->
+          <div class="bg-bg-card border border-border-subtle rounded-xl p-5 shadow-sm">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+              <div>
+                <h2 class="text-sm font-bold text-white tracking-tight flex items-center gap-2">
+                  <span>Throughput Timeline</span>
+                </h2>
+                <p class="text-xs text-gray-400">Daily token volume recorded in SQLite ledger</p>
+              </div>
+
+              <!-- Period Filter Buttons (Includes All-Time) -->
+              <div class="inline-flex bg-bg-subtle p-1 rounded-lg border border-border-subtle">
+                <button onclick="selectPeriod('today')" id="p-today" class="period-tab px-3 py-1 text-xs font-medium rounded-md text-gray-400 hover:text-white transition-all">Today</button>
+                <button onclick="selectPeriod('7d')" id="p-7d" class="period-tab px-3 py-1 text-xs font-medium rounded-md text-gray-400 hover:text-white transition-all">7D</button>
+                <button onclick="selectPeriod('30d')" id="p-30d" class="period-tab px-3 py-1 text-xs font-medium rounded-md text-gray-400 hover:text-white transition-all">30D</button>
+                <button onclick="selectPeriod('60d')" id="p-60d" class="period-tab px-3 py-1 text-xs font-medium rounded-md text-gray-400 hover:text-white transition-all">60D</button>
+                <button onclick="selectPeriod('all')" id="p-all" class="period-tab px-3 py-1 text-xs font-semibold rounded-md bg-brand-500 text-black shadow-sm transition-all">All</button>
+              </div>
+            </div>
+
+            <div class="h-64 lg:h-72 w-full">
+              <canvas id="mainChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Top Models & Provider Breakdown -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Top Models -->
+            <div class="bg-bg-card border border-border-subtle rounded-xl p-5 shadow-sm">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3 flex items-center justify-between">
+                <span>Top Models by Requests</span>
+                <span class="text-[10px] text-cyan-400 font-mono font-normal">Active Breakdown</span>
+              </h3>
+              <div id="top-models-container" class="space-y-2.5 max-h-80 overflow-y-auto custom-scrollbar pr-1">
+                <!-- Dynamically filled -->
+              </div>
+            </div>
+
+            <!-- Provider Matrix -->
+            <div class="bg-bg-card border border-border-subtle rounded-xl p-5 shadow-sm">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3 flex items-center justify-between">
+                <span>Provider Accounts Breakdown</span>
+                <span class="text-[10px] text-emerald-400 font-mono font-normal">Health Pool</span>
+              </h3>
+              <div id="provider-matrix-container" class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-80 overflow-y-auto custom-scrollbar pr-1">
+                <!-- Dynamically filled -->
+              </div>
+            </div>
+          </div>
+
         </div>
 
-        <div class="overflow-x-auto custom-scroll max-h-[580px]">
-          <table class="w-full text-left text-xs text-gray-300">
-            <thead class="bg-gray-950/60 uppercase text-[10px] text-gray-400 font-mono sticky top-0 backdrop-blur-md">
-              <tr>
-                <th class="py-2.5 px-3">Timestamp</th>
-                <th class="py-2.5 px-3">Provider</th>
-                <th class="py-2.5 px-3">Model</th>
-                <th class="py-2.5 px-3">Tokens (In / Out)</th>
-                <th class="py-2.5 px-3">Status</th>
-              </tr>
-            </thead>
-            <tbody id="logs-table-body" class="divide-y divide-white/5 font-mono">
+        <!-- ======================================================== -->
+        <!-- VIEW 2: PROVIDERS & ACCOUNTS (Full accounts list)       -->
+        <!-- ======================================================== -->
+        <div id="view-providers" class="view-panel hidden space-y-4">
+          <div class="bg-bg-card border border-border-subtle rounded-xl p-5 shadow-sm">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+              <div>
+                <h2 class="text-base font-bold text-white tracking-tight">Active Provider Accounts Pool</h2>
+                <p class="text-xs text-gray-400">All credentials securely managed via SQLite with automatic circuit breakers</p>
+              </div>
+              <div class="w-full sm:w-72">
+                <input type="text" id="filter-acc-input" oninput="searchAccounts()" placeholder="Filter by name, provider, email..." class="w-full bg-bg-subtle border border-border-subtle rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-brand-500 transition-all font-mono">
+              </div>
+            </div>
+
+            <div class="overflow-x-auto custom-scrollbar max-h-[600px]">
+              <table class="w-full text-left text-xs text-gray-300">
+                <thead class="bg-bg-subtle/80 uppercase text-[10px] text-gray-400 font-mono sticky top-0 backdrop-blur-md">
+                  <tr>
+                    <th class="py-2.5 px-3">Provider</th>
+                    <th class="py-2.5 px-3">Account Name / Email</th>
+                    <th class="py-2.5 px-3">Auth Type</th>
+                    <th class="py-2.5 px-3">Status</th>
+                    <th class="py-2.5 px-3">Priority</th>
+                    <th class="py-2.5 px-3">Account ID</th>
+                  </tr>
+                </thead>
+                <tbody id="accounts-rows" class="divide-y divide-border-subtle font-mono">
+                  <!-- Dynamically rendered -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- VIEW 3: ENDPOINT & KEYS (Guides for Claude Code / Cursor)-->
+        <!-- ======================================================== -->
+        <div id="view-endpoint" class="view-panel hidden space-y-6">
+          <div class="bg-bg-card border border-border-subtle rounded-xl p-5 shadow-sm space-y-5">
+            <div>
+              <h2 class="text-base font-bold text-white tracking-tight">Endpoint Configuration</h2>
+              <p class="text-xs text-gray-400">Use this local endpoint in your coding harnesses, IDE extensions, or agent scripts</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono text-xs">
+              <div class="bg-bg-subtle p-3.5 rounded-lg border border-border-subtle">
+                <div class="text-[10px] text-gray-400 mb-1 font-semibold uppercase">OpenAI Base URL</div>
+                <div class="flex items-center justify-between text-cyan-400 font-bold">
+                  <span id="cfg-openai-url">http://localhost:20129/v1</span>
+                  <button onclick="copyText('http://localhost:20129/v1')" class="text-gray-400 hover:text-white">Copy</button>
+                </div>
+              </div>
+
+              <div class="bg-bg-subtle p-3.5 rounded-lg border border-border-subtle">
+                <div class="text-[10px] text-gray-400 mb-1 font-semibold uppercase">Claude Messages URL</div>
+                <div class="flex items-center justify-between text-emerald-400 font-bold">
+                  <span id="cfg-claude-url">http://localhost:20129/v1</span>
+                  <button onclick="copyText('http://localhost:20129/v1')" class="text-gray-400 hover:text-white">Copy</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Snippets -->
+            <div class="space-y-3">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400">Integration Commands</h3>
+              
+              <div class="bg-bg-subtle p-3 rounded-lg border border-border-subtle space-y-1.5 font-mono text-xs">
+                <div class="text-[11px] text-cyan-400 font-bold">Claude Code CLI Integration:</div>
+                <div class="text-gray-300 bg-bg/60 p-2 rounded overflow-x-auto">
+                  ANTHROPIC_BASE_URL="http://localhost:20129" claude
+                </div>
+              </div>
+
+              <div class="bg-bg-subtle p-3 rounded-lg border border-border-subtle space-y-1.5 font-mono text-xs">
+                <div class="text-[11px] text-emerald-400 font-bold">Cursor / Aider / OpenAI SDK:</div>
+                <div class="text-gray-300 bg-bg/60 p-2 rounded overflow-x-auto">
+                  OPENAI_BASE_URL="http://localhost:20129/v1" OPENAI_API_KEY="sk-any-key"
+                </div>
+              </div>
+            </div>
+
+            <!-- API Keys Section -->
+            <div class="pt-3 border-t border-border-subtle">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">Registered API Keys</h3>
+              <div id="api-keys-list" class="space-y-2 font-mono text-xs">
+                <!-- Dynamically filled -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- VIEW 4: COMBOS & VISION ADAPTERS                         -->
+        <!-- ======================================================== -->
+        <div id="view-combos" class="view-panel hidden space-y-4">
+          <div class="bg-bg-card border border-border-subtle rounded-xl p-5 shadow-sm space-y-4">
+            <div>
+              <h2 class="text-base font-bold text-white tracking-tight">Combos & Vision Adapter</h2>
+              <p class="text-xs text-gray-400">Multi-model fallback arrays and capacity-based auto routing</p>
+            </div>
+            <div id="combos-list" class="space-y-3">
               <!-- Dynamically populated -->
-            </tbody>
-          </table>
+            </div>
+          </div>
         </div>
-      </div>
-    </section>
 
-  </main>
+        <!-- ======================================================== -->
+        <!-- VIEW 5: TOKEN SAVER & COMPRESSION                       -->
+        <!-- ======================================================== -->
+        <div id="view-tokensaver" class="view-panel hidden space-y-4">
+          <div class="bg-bg-card border border-border-subtle rounded-xl p-5 shadow-sm space-y-4">
+            <div>
+              <h2 class="text-base font-bold text-white tracking-tight">Token Saver & Optimization Engine</h2>
+              <p class="text-xs text-gray-400">Built-in RTK compression, Undici keep-alive, and latency reduction features</p>
+            </div>
+
+            <div id="tokensaver-features" class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- VIEW 6: PLAYGROUND (Interactive live testing)           -->
+        <!-- ======================================================== -->
+        <div id="view-playground" class="view-panel hidden space-y-4">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="bg-bg-card border border-border-subtle rounded-xl p-5 space-y-4">
+              <h2 class="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center justify-between">
+                <span>Playground Options</span>
+                <span class="text-cyan-400 font-mono">⚡ Direct Route</span>
+              </h2>
+
+              <div>
+                <label class="block text-xs text-gray-400 mb-1">Model Target</label>
+                <select id="pg-model" class="w-full bg-bg-subtle border border-border-subtle rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brand-500 font-mono">
+                  <option value="gemini-3.8-flash-high">gemini-3.8-flash-high (Antigravity)</option>
+                  <option value="gemini-3.7-flash-high">gemini-3.7-flash-high (Antigravity)</option>
+                  <option value="claude-opus-4-6-thinking">claude-opus-4-6-thinking (Antigravity)</option>
+                  <option value="deepseek-v4-flash">deepseek-v4-flash</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs text-gray-400 mb-1">API Protocol</label>
+                <select id="pg-protocol" class="w-full bg-bg-subtle border border-border-subtle rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brand-500 font-mono">
+                  <option value="/v1/chat/completions">POST /v1/chat/completions (OpenAI)</option>
+                  <option value="/v1/messages">POST /v1/messages (Claude)</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs text-gray-400 mb-1">System Message</label>
+                <textarea id="pg-system" rows="2" class="w-full bg-bg-subtle border border-border-subtle rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brand-500">You are a helpful and concise assistant.</textarea>
+              </div>
+
+              <div>
+                <label class="block text-xs text-gray-400 mb-1">User Prompt</label>
+                <textarea id="pg-prompt" rows="3" class="w-full bg-bg-subtle border border-border-subtle rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brand-500">Ceritakan 1 lelucon lucu tentang programmer.</textarea>
+              </div>
+
+              <button onclick="executePlayground()" id="pg-btn" class="w-full py-2.5 rounded-lg bg-gradient-to-r from-brand-500 to-cyan-400 text-black font-bold text-xs uppercase tracking-wider hover:opacity-90 transition-all flex items-center justify-center gap-1.5 shadow-md">
+                <span class="material-symbols-outlined text-[16px]">play_arrow</span>
+                <span>Send Request</span>
+              </button>
+            </div>
+
+            <div class="lg:col-span-2 bg-bg-card border border-border-subtle rounded-xl p-5 flex flex-col">
+              <div class="flex items-center justify-between border-b border-border-subtle pb-3 mb-3 text-xs">
+                <span class="font-bold text-white uppercase tracking-wider">Stream Output</span>
+                <span id="pg-latency" class="font-mono text-gray-400">Idle</span>
+              </div>
+              <div id="pg-output" class="flex-1 min-h-[300px] bg-bg-subtle rounded-lg p-4 font-mono text-xs text-gray-200 overflow-y-auto whitespace-pre-wrap custom-scrollbar border border-border-subtle">
+                Click "Send Request" to test the ultra-fast Hono pipeline live...
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- VIEW 7: MODEL CATALOG                                    -->
+        <!-- ======================================================== -->
+        <div id="view-catalog" class="view-panel hidden space-y-4">
+          <div class="bg-bg-card border border-border-subtle rounded-xl p-5 shadow-sm space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
+              <div>
+                <h2 class="text-base font-bold text-white tracking-tight">OpenAI Compatible Catalog</h2>
+                <p class="text-xs text-gray-400">Models advertised through <code class="text-cyan-400">GET /v1/models</code></p>
+              </div>
+              <input type="text" id="catalog-search" oninput="searchCatalog()" placeholder="Search model name..." class="w-full sm:w-64 bg-bg-subtle border border-border-subtle rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-brand-500 font-mono">
+            </div>
+
+            <div id="catalog-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[600px] overflow-y-auto custom-scrollbar pr-1">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- VIEW 8: CONSOLE LOGS                                     -->
+        <!-- ======================================================== -->
+        <div id="view-logs" class="view-panel hidden space-y-4">
+          <div class="bg-bg-card border border-border-subtle rounded-xl p-5 shadow-sm space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h2 class="text-base font-bold text-white tracking-tight">Recent Request Logs</h2>
+                <p class="text-xs text-gray-400">Activity stream from SQLite usage history</p>
+              </div>
+              <button onclick="loadLogsView()" class="px-3 py-1 bg-bg-subtle hover:bg-bg-elevated border border-border-subtle text-xs rounded text-white font-mono">Reload</button>
+            </div>
+
+            <div class="overflow-x-auto custom-scrollbar max-h-[580px]">
+              <table class="w-full text-left text-xs text-gray-300">
+                <thead class="bg-bg-subtle uppercase text-[10px] text-gray-400 font-mono sticky top-0 backdrop-blur-md">
+                  <tr>
+                    <th class="py-2.5 px-3">Time</th>
+                    <th class="py-2.5 px-3">Provider</th>
+                    <th class="py-2.5 px-3">Model</th>
+                    <th class="py-2.5 px-3">Tokens (In / Out)</th>
+                    <th class="py-2.5 px-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="logs-rows" class="divide-y divide-border-subtle font-mono">
+                  <!-- Dynamically populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
 
   <script>
     let globalChart = null;
     let currentPeriod = 'all';
-    let cachedAccounts = [];
-    let cachedModels = [];
+    let accountsData = [];
+    let catalogData = [];
 
-    // Tab Navigation
-    function switchTab(tabId) {
-      ['overview', 'accounts', 'models', 'playground', 'logs'].forEach(t => {
-        const el = document.getElementById('tab-' + t);
-        const btn = document.getElementById('tab-btn-' + t);
-        if (el) el.classList.toggle('hidden', t !== tabId);
-        if (btn) {
-          if (t === tabId) {
-            btn.className = 'tab-btn px-4 py-1.5 rounded-lg text-xs font-semibold bg-brand-500 text-black shadow-glow-cyan transition-all duration-200';
-          } else {
-            btn.className = 'tab-btn px-4 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-white transition-all duration-200';
-          }
-        }
-      });
-      if (tabId === 'logs') loadLogs();
+    function toggleSidebar(open) {
+      const sidebar = document.getElementById('main-sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      if (open) {
+        sidebar.classList.remove('-translate-x-full');
+        overlay.classList.remove('hidden');
+      } else {
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+      }
     }
 
-    // Number formatter
-    function fmt(n) {
+    function navigate(viewKey) {
+      document.querySelectorAll('.view-panel').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+
+      const targetView = document.getElementById('view-' + viewKey);
+      const targetNav = document.getElementById('nav-' + viewKey);
+      if (targetView) targetView.classList.remove('hidden');
+      if (targetNav) targetNav.classList.add('active');
+
+      const titles = {
+        usage: 'Usage & Analytics',
+        providers: 'Providers & Accounts',
+        endpoint: 'Endpoint & Keys',
+        combos: 'Combos & Vision Adapters',
+        tokensaver: 'Token Saver & Optimizations',
+        playground: 'Live Playground ⚡',
+        catalog: 'Model Catalog',
+        logs: 'Console Logs'
+      };
+      document.getElementById('page-title').textContent = titles[viewKey] || 'Dashboard';
+
+      toggleSidebar(false);
+
+      if (viewKey === 'providers') loadAccountsView();
+      if (viewKey === 'catalog') loadCatalogView();
+      if (viewKey === 'combos') loadCombosView();
+      if (viewKey === 'tokensaver') loadTokenSaverView();
+      if (viewKey === 'endpoint') loadEndpointView();
+      if (viewKey === 'logs') loadLogsView();
+    }
+
+    function fmtNum(n) {
       if (!n && n !== 0) return '0';
       if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
       if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
@@ -456,24 +628,22 @@ export const DASHBOARD_HTML = `<!DOCTYPE html>
       return Number(n).toLocaleString();
     }
 
-    // Period selector
-    function setPeriod(p) {
+    function selectPeriod(p) {
       currentPeriod = p;
-      ['today', '7d', '30d', 'all'].forEach(k => {
-        const btn = document.getElementById('period-' + k);
+      ['today', '7d', '30d', '60d', 'all'].forEach(k => {
+        const btn = document.getElementById('p-' + k);
         if (btn) {
           if (k === p) {
-            btn.className = 'period-btn px-3 py-1 text-xs font-semibold rounded-lg bg-brand-500 text-black shadow-glow-cyan transition-all';
+            btn.className = 'period-tab px-3 py-1 text-xs font-semibold rounded-md bg-brand-500 text-black shadow-sm transition-all';
           } else {
-            btn.className = 'period-btn px-3 py-1 text-xs font-medium rounded-lg text-gray-400 hover:text-white transition-all';
+            btn.className = 'period-tab px-3 py-1 text-xs font-medium rounded-md text-gray-400 hover:text-white transition-all';
           }
         }
       });
-      fetchData();
+      loadUsageData();
     }
 
-    // Fetch stats and chart
-    async function fetchData() {
+    async function loadUsageData() {
       try {
         const [statsRes, chartRes] = await Promise.all([
           fetch('/api/dashboard/stats?period=' + currentPeriod).then(r => r.json()),
@@ -487,79 +657,74 @@ export const DASHBOARD_HTML = `<!DOCTYPE html>
           const totalCached = s.totalCachedTokens || 0;
           const grandTotal = totalPrompt + totalComp + totalCached;
 
-          document.getElementById('stat-total-tokens').textContent = fmt(grandTotal);
-          document.getElementById('stat-prompt-tokens').textContent = fmt(totalPrompt);
-          document.getElementById('stat-comp-tokens').textContent = fmt(totalComp);
-          document.getElementById('stat-total-requests').textContent = (s.totalRequests || 0).toLocaleString();
-          document.getElementById('stat-total-cost').textContent = '$' + (s.totalCost || 0).toFixed(2);
-          document.getElementById('stat-account-pool').textContent = statsRes.meta?.totalAccounts || 0;
-          document.getElementById('nav-acc-count').textContent = statsRes.meta?.totalAccounts || 0;
+          document.getElementById('u-total-tokens').textContent = fmtNum(grandTotal);
+          document.getElementById('u-prompt-tokens').textContent = fmtNum(totalPrompt);
+          document.getElementById('u-comp-tokens').textContent = fmtNum(totalComp);
+          document.getElementById('u-total-requests').textContent = (s.totalRequests || 0).toLocaleString();
+          document.getElementById('u-total-cost').textContent = '$' + (s.totalCost || 0).toFixed(2);
+          document.getElementById('u-accounts-count').textContent = statsRes.meta?.totalAccounts || 0;
+          document.getElementById('nav-badge-accounts').textContent = statsRes.meta?.totalAccounts || 0;
 
-          // Populate top models list
-          const modelsList = document.getElementById('models-rank-list');
-          modelsList.innerHTML = '';
+          // Render top models
+          const modelsEl = document.getElementById('top-models-container');
+          modelsEl.innerHTML = '';
           const sortedModels = Object.entries(s.byModel || {})
             .sort((a, b) => (b[1].requests || 0) - (a[1].requests || 0))
             .slice(0, 10);
 
-          sortedModels.forEach(([modelKey, m], idx) => {
-            const mTotal = (m.promptTokens || 0) + (m.completionTokens || 0);
+          sortedModels.forEach(([key, m], idx) => {
             const row = document.createElement('div');
-            row.className = 'flex items-center justify-between p-2.5 rounded-xl bg-gray-950/40 border border-white/5 hover:border-cyan-500/30 transition-all';
+            row.className = 'flex items-center justify-between p-2.5 rounded-lg bg-bg-subtle border border-border-subtle';
             row.innerHTML = \`
               <div class="flex items-center gap-2.5 min-w-0">
-                <span class="h-6 w-6 rounded-lg bg-gray-800 text-cyan-400 font-mono font-bold text-xs flex items-center justify-center flex-shrink-0">\${idx + 1}</span>
+                <span class="size-6 rounded bg-bg-elevated text-cyan-400 font-mono font-bold text-xs flex items-center justify-center flex-shrink-0">\${idx + 1}</span>
                 <div class="truncate">
-                  <div class="text-xs font-semibold text-white truncate">\${m.rawModel || modelKey}</div>
+                  <div class="text-xs font-semibold text-white truncate">\${m.rawModel || key}</div>
                   <div class="text-[10px] text-gray-400">\${m.provider || 'default'}</div>
                 </div>
               </div>
               <div class="text-right font-mono text-xs flex-shrink-0">
-                <div class="font-bold text-cyan-300">\${fmt(m.requests)} reqs</div>
-                <div class="text-[10px] text-gray-400">\${fmt(mTotal)} tokens</div>
+                <div class="font-bold text-cyan-300">\${fmtNum(m.requests)} reqs</div>
+                <div class="text-[10px] text-gray-400">\${fmtNum((m.promptTokens || 0) + (m.completionTokens || 0))} tokens</div>
               </div>
             \`;
-            modelsList.appendChild(row);
+            modelsEl.appendChild(row);
           });
 
-          // Populate providers matrix
-          const provList = document.getElementById('providers-matrix-list');
-          provList.innerHTML = '';
-          const providers = statsRes.meta?.providers || {};
-          Object.entries(providers)
-            .sort((a, b) => b[1] - a[1])
-            .forEach(([prov, cnt]) => {
-              const card = document.createElement('div');
-              card.className = 'p-3 rounded-xl bg-gray-950/50 border border-white/5 flex flex-col justify-between';
-              card.innerHTML = \`
-                <span class="text-[11px] font-bold text-gray-300 truncate uppercase tracking-wider">\${prov}</span>
-                <div class="mt-2 flex items-baseline justify-between">
-                  <span class="text-lg font-black font-mono text-cyan-400">\${cnt}</span>
-                  <span class="text-[10px] text-gray-500 font-mono">accounts</span>
-                </div>
-              \`;
-              provList.appendChild(card);
-            });
+          // Render provider matrix
+          const provEl = document.getElementById('provider-matrix-container');
+          provEl.innerHTML = '';
+          const provs = statsRes.meta?.providers || {};
+          Object.entries(provs).sort((a, b) => b[1] - a[1]).forEach(([prov, cnt]) => {
+            const card = document.createElement('div');
+            card.className = 'p-3 rounded-lg bg-bg-subtle border border-border-subtle flex flex-col justify-between';
+            card.innerHTML = \`
+              <span class="text-[11px] font-bold text-gray-300 truncate uppercase tracking-wider">\${prov}</span>
+              <div class="mt-2 flex items-baseline justify-between">
+                <span class="text-base font-bold font-mono text-cyan-400">\${cnt}</span>
+                <span class="text-[10px] text-gray-500 font-mono">accounts</span>
+              </div>
+            \`;
+            provEl.appendChild(card);
+          });
         }
 
-        // Render Chart
-        renderChart(chartRes);
-
-      } catch (e) {
-        console.error("Dashboard fetch error:", e);
+        renderUsageChart(chartRes);
+      } catch (err) {
+        console.error("Usage load error:", err);
       }
     }
 
-    function renderChart(chartData) {
+    function renderUsageChart(chartData) {
       if (!Array.isArray(chartData) || !chartData.length) return;
-      const ctx = document.getElementById('usageChart').getContext('2d');
+      const ctx = document.getElementById('mainChart').getContext('2d');
       if (globalChart) globalChart.destroy();
 
       const labels = chartData.map(d => d.label);
       const tokens = chartData.map(d => d.tokens || 0);
 
-      const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-      gradient.addColorStop(0, 'rgba(6, 182, 212, 0.45)');
+      const gradient = ctx.createLinearGradient(0, 0, 0, 260);
+      gradient.addColorStop(0, 'rgba(6, 182, 212, 0.4)');
       gradient.addColorStop(1, 'rgba(6, 182, 212, 0.0)');
 
       globalChart = new Chart(ctx, {
@@ -567,29 +732,24 @@ export const DASHBOARD_HTML = `<!DOCTYPE html>
         data: {
           labels,
           datasets: [{
-            label: 'Tokens Processed',
+            label: 'Tokens',
             data: tokens,
             borderColor: '#22d3ee',
-            borderWidth: 2.5,
+            borderWidth: 2,
             pointBackgroundColor: '#06b6d4',
-            pointRadius: chartData.length > 40 ? 0 : 3,
-            pointHoverRadius: 6,
+            pointRadius: chartData.length > 40 ? 0 : 2.5,
             fill: true,
             backgroundColor: gradient,
-            tension: 0.35,
+            tension: 0.3,
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          interaction: {
-            intersect: false,
-            mode: 'index',
-          },
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: 'rgba(15, 23, 42, 0.95)',
+              backgroundColor: '#18181b',
               titleColor: '#fff',
               bodyColor: '#22d3ee',
               borderColor: 'rgba(255,255,255,0.1)',
@@ -597,21 +757,21 @@ export const DASHBOARD_HTML = `<!DOCTYPE html>
               padding: 10,
               displayColors: false,
               callbacks: {
-                label: (ctx) => 'Tokens: ' + ctx.raw.toLocaleString()
+                label: (c) => 'Tokens: ' + c.raw.toLocaleString()
               }
             }
           },
           scales: {
             x: {
               grid: { color: 'rgba(255,255,255,0.03)' },
-              ticks: { color: '#6b7280', font: { size: 10, family: 'JetBrains Mono' }, maxTicksLimit: 12 }
+              ticks: { color: '#71717a', font: { size: 10, family: 'JetBrains Mono' }, maxTicksLimit: 12 }
             },
             y: {
               grid: { color: 'rgba(255,255,255,0.05)' },
               ticks: {
-                color: '#6b7280',
+                color: '#71717a',
                 font: { size: 10, family: 'JetBrains Mono' },
-                callback: (val) => fmt(val)
+                callback: (v) => fmtNum(v)
               }
             }
           }
@@ -619,19 +779,18 @@ export const DASHBOARD_HTML = `<!DOCTYPE html>
       });
     }
 
-    // Load Accounts
-    async function loadAccounts() {
+    async function loadAccountsView() {
       try {
         const res = await fetch('/api/dashboard/accounts');
-        cachedAccounts = await res.json();
-        renderAccountsTable(cachedAccounts);
-      } catch (e) {
-        console.error(e);
+        accountsData = await res.json();
+        renderAccountsTable(accountsData);
+      } catch (err) {
+        console.error(err);
       }
     }
 
     function renderAccountsTable(list) {
-      const tbody = document.getElementById('accounts-table-body');
+      const tbody = document.getElementById('accounts-rows');
       tbody.innerHTML = '';
       list.forEach(a => {
         const tr = document.createElement('tr');
@@ -641,7 +800,7 @@ export const DASHBOARD_HTML = `<!DOCTYPE html>
           <td class="py-2.5 px-3 text-cyan-300 font-sans truncate max-w-[200px]">\${a.name || a.email}</td>
           <td class="py-2.5 px-3 text-gray-400 uppercase text-[10px]">\${a.authType}</td>
           <td class="py-2.5 px-3">
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold \${a.isActive ? 'bg-emerald-950 text-emerald-400 border border-emerald-800/60' : 'bg-rose-950 text-rose-400 border border-rose-800/60'}">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold \${a.isActive ? 'bg-emerald-950 text-emerald-400 border border-emerald-800/50' : 'bg-rose-950 text-rose-400 border border-rose-800/50'}">
               \${a.isActive ? 'Active' : 'Disabled'}
             </span>
           </td>
@@ -652,172 +811,238 @@ export const DASHBOARD_HTML = `<!DOCTYPE html>
       });
     }
 
-    function filterAccounts() {
-      const query = document.getElementById('account-search').value.toLowerCase();
-      const filtered = cachedAccounts.filter(a => 
-        (a.name || '').toLowerCase().includes(query) ||
-        (a.email || '').toLowerCase().includes(query) ||
-        (a.provider || '').toLowerCase().includes(query)
+    function searchAccounts() {
+      const q = document.getElementById('filter-acc-input').value.toLowerCase();
+      const filtered = accountsData.filter(a =>
+        (a.name || '').toLowerCase().includes(q) ||
+        (a.email || '').toLowerCase().includes(q) ||
+        (a.provider || '').toLowerCase().includes(q)
       );
       renderAccountsTable(filtered);
     }
 
-    // Load Models Catalog
-    async function loadCatalog() {
+    async function loadCatalogView() {
       try {
         const res = await fetch('/api/dashboard/models');
         const data = await res.json();
-        cachedModels = data.models || [];
-        document.getElementById('nav-model-count').textContent = cachedModels.length;
-        renderCatalog(cachedModels);
+        catalogData = data.models || [];
+        document.getElementById('nav-badge-models').textContent = catalogData.length;
+        renderCatalogCards(catalogData);
 
         // Populate playground select
-        const sel = document.getElementById('play-model');
+        const sel = document.getElementById('pg-model');
         sel.innerHTML = '';
-        cachedModels.forEach(m => {
+        catalogData.forEach(m => {
           const opt = document.createElement('option');
           opt.value = m.id;
           opt.textContent = m.id + (m.owned_by ? ' (' + m.owned_by + ')' : '');
           sel.appendChild(opt);
         });
-      } catch (e) {
-        console.error(e);
+      } catch (err) {
+        console.error(err);
       }
     }
 
-    function renderCatalog(models) {
-      const grid = document.getElementById('catalog-grid');
-      grid.innerHTML = '';
+    function renderCatalogCards(models) {
+      const container = document.getElementById('catalog-cards-container');
+      container.innerHTML = '';
       models.forEach(m => {
         const card = document.createElement('div');
-        card.className = 'p-3.5 rounded-xl bg-gray-950/60 border border-white/5 hover:border-cyan-500/30 transition-all flex flex-col justify-between';
+        card.className = 'p-3.5 rounded-lg bg-bg-subtle border border-border-subtle flex flex-col justify-between';
         card.innerHTML = \`
           <div>
             <div class="text-xs font-bold text-white font-mono break-all">\${m.id}</div>
-            <div class="text-[10px] text-cyan-400 mt-1 uppercase tracking-wider font-mono">\${m.owned_by || '9router'}</div>
+            <div class="text-[10px] text-cyan-400 mt-1 uppercase font-mono">\${m.owned_by || '9router'}</div>
           </div>
-          <div class="mt-3 flex items-center justify-between text-[10px] text-gray-400 pt-2 border-t border-white/5">
-            <span>Context: \${m.context_length ? fmt(m.context_length) : 'N/A'}</span>
-            <button onclick="copyModel('\${m.id}')" class="text-xs text-gray-400 hover:text-white">Copy</button>
+          <div class="mt-3 flex items-center justify-between text-[10px] text-gray-400 pt-2 border-t border-border-subtle">
+            <span>Context: \${m.context_length ? fmtNum(m.context_length) : 'N/A'}</span>
+            <button onclick="copyText('\${m.id}')" class="text-xs text-gray-400 hover:text-white">Copy</button>
           </div>
         \`;
-        grid.appendChild(card);
+        container.appendChild(card);
       });
     }
 
-    function filterCatalog() {
-      const query = document.getElementById('model-search').value.toLowerCase();
-      const filtered = cachedModels.filter(m => m.id.toLowerCase().includes(query));
-      renderCatalog(filtered);
+    function searchCatalog() {
+      const q = document.getElementById('catalog-search').value.toLowerCase();
+      renderCatalogCards(catalogData.filter(m => m.id.toLowerCase().includes(q)));
     }
 
-    function copyModel(id) {
-      navigator.clipboard.writeText(id);
-      alert('Model ID copied: ' + id);
+    async function loadCombosView() {
+      try {
+        const res = await fetch('/api/dashboard/combos');
+        const combos = await res.json();
+        const el = document.getElementById('combos-list');
+        el.innerHTML = '';
+        if (!combos.length) {
+          el.innerHTML = '<div class="text-xs text-gray-400 font-mono">No custom combos configured.</div>';
+          return;
+        }
+        combos.forEach(c => {
+          const item = document.createElement('div');
+          item.className = 'p-3 rounded-lg bg-bg-subtle border border-border-subtle font-mono text-xs';
+          item.innerHTML = \`
+            <div class="font-bold text-white mb-1">\${c.name}</div>
+            <div class="text-[11px] text-gray-400">Models: \${(c.models || []).join(' → ')}</div>
+          \`;
+          el.appendChild(item);
+        });
+      } catch (err) {
+        console.error(err);
+      }
     }
 
-    // Load Logs
-    async function loadLogs() {
+    async function loadTokenSaverView() {
+      try {
+        const res = await fetch('/api/dashboard/settings');
+        const settings = await res.json();
+        const el = document.getElementById('tokensaver-features');
+        el.innerHTML = '';
+
+        const features = [
+          { title: "RTK Token Saver", desc: "Compresses tool_result content in-place before upstream dispatch", active: !!settings.rtkEnabled },
+          { title: "Undici Keep-Alive", desc: "Persistent TLS connection pool for all upstreams cutting 1-2s TCP handshake", active: true },
+          { title: "Antigravity Image Direct", desc: "Direct route preserving image blocks without lossy OpenAI translation", active: true },
+          { title: "Domain Circuit Breaker", desc: "Bulk-disables dead GSuite domains in <50ms after 2 failures", active: true },
+          { title: "Headroom Optimizer", desc: settings.headroomUrl ? "Headroom service connected" : "Headroom optimization ready", active: !!settings.headroomEnabled },
+          { title: "Tool Args Sanitizer", desc: "Normalizes invalid JSON schema parameters for Claude Code models", active: true }
+        ];
+
+        features.forEach(f => {
+          const card = document.createElement('div');
+          card.className = 'p-3.5 rounded-lg bg-bg-subtle border border-border-subtle flex items-start justify-between gap-2';
+          card.innerHTML = \`
+            <div>
+              <div class="font-bold text-white">\${f.title}</div>
+              <div class="text-[10px] text-gray-400 mt-1 font-sans">\${f.desc}</div>
+            </div>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold \${f.active ? 'bg-emerald-950 text-emerald-400 border border-emerald-800/50' : 'bg-gray-800 text-gray-400'}">
+              \${f.active ? 'ENABLED' : 'OFF'}
+            </span>
+          \`;
+          el.appendChild(card);
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function loadEndpointView() {
+      try {
+        const res = await fetch('/api/dashboard/keys');
+        const keys = await res.json();
+        const el = document.getElementById('api-keys-list');
+        el.innerHTML = '';
+        if (!keys.length) {
+          el.innerHTML = '<div class="text-gray-500">No API keys generated. Local requests are accepted directly.</div>';
+          return;
+        }
+        keys.forEach(k => {
+          const item = document.createElement('div');
+          item.className = 'p-2.5 rounded bg-bg/50 border border-border-subtle flex items-center justify-between';
+          item.innerHTML = \`
+            <div>
+              <div class="text-white font-semibold">\${k.name || 'API Key'}</div>
+              <div class="text-gray-400 text-[11px]">\${k.key ? k.key.slice(0, 10) + '...' + k.key.slice(-4) : '••••••••'}</div>
+            </div>
+            <button onclick="copyText('\${k.key}')" class="text-xs text-gray-400 hover:text-white">Copy Key</button>
+          \`;
+          el.appendChild(item);
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function loadLogsView() {
       try {
         const res = await fetch('/api/dashboard/logs?limit=80');
         const logs = await res.json();
-        const tbody = document.getElementById('logs-table-body');
+        const tbody = document.getElementById('logs-rows');
         tbody.innerHTML = '';
         logs.forEach(l => {
           const tr = document.createElement('tr');
-          tr.className = 'hover:bg-white/[0.02] transition-colors';
-          const inTokens = l.promptTokens || 0;
-          const outTokens = l.completionTokens || 0;
+          tr.className = 'hover:bg-white/[0.02]';
           tr.innerHTML = \`
             <td class="py-2 px-3 text-gray-400 text-[10px] whitespace-nowrap">\${l.timestamp ? new Date(l.timestamp).toLocaleTimeString() : '-'}</td>
             <td class="py-2 px-3 font-semibold text-white">\${l.provider || '-'}</td>
             <td class="py-2 px-3 text-cyan-300 truncate max-w-[220px]">\${l.model || '-'}</td>
-            <td class="py-2 px-3 text-gray-300">\${fmt(inTokens)} / \${fmt(outTokens)}</td>
+            <td class="py-2 px-3 text-gray-300">\${fmtNum(l.promptTokens || 0)} / \${fmtNum(l.completionTokens || 0)}</td>
             <td class="py-2 px-3"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-950 text-emerald-400">\${l.status || 'OK'}</span></td>
           \`;
           tbody.appendChild(tr);
         });
-      } catch (e) {
-        console.error(e);
+      } catch (err) {
+        console.error(err);
       }
     }
 
-    // Playground Execution
-    async function runPlayground() {
-      const btn = document.getElementById('play-submit-btn');
-      const status = document.getElementById('play-status');
-      const out = document.getElementById('play-output');
-      const model = document.getElementById('play-model').value;
-      const endpoint = document.getElementById('play-endpoint').value;
-      const key = document.getElementById('play-key').value;
-      const system = document.getElementById('play-system').value;
-      const prompt = document.getElementById('play-prompt').value;
+    async function executePlayground() {
+      const btn = document.getElementById('pg-btn');
+      const lat = document.getElementById('pg-latency');
+      const out = document.getElementById('pg-output');
+      const model = document.getElementById('pg-model').value;
+      const protocol = document.getElementById('pg-protocol').value;
+      const system = document.getElementById('pg-system').value;
+      const prompt = document.getElementById('pg-prompt').value;
 
       btn.disabled = true;
-      btn.classList.add('opacity-50');
-      status.textContent = 'Connecting...';
+      lat.textContent = 'Streaming...';
       out.textContent = '';
 
-      const headers = { 'Content-Type': 'application/json' };
-      if (key) headers['Authorization'] = 'Bearer ' + key;
-
       let payload = {};
-      if (endpoint.includes('messages')) {
-        payload = {
-          model,
-          max_tokens: 1024,
-          system,
-          messages: [{ role: 'user', content: prompt }]
-        };
+      if (protocol.includes('messages')) {
+        payload = { model, max_tokens: 1024, system, messages: [{ role: 'user', content: prompt }] };
       } else {
-        payload = {
-          model,
-          messages: [
-            { role: 'system', content: system },
-            { role: 'user', content: prompt }
-          ]
-        };
+        payload = { model, messages: [{ role: 'system', content: system }, { role: 'user', content: prompt }] };
       }
 
-      const startTime = performance.now();
-
+      const t0 = performance.now();
       try {
-        const res = await fetch(endpoint, {
+        const res = await fetch(protocol, {
           method: 'POST',
-          headers,
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
-
-        const elapsed = (performance.now() - startTime).toFixed(1);
-        status.textContent = \`Status: \${res.status} (\${elapsed}ms)\`;
+        const elapsed = (performance.now() - t0).toFixed(1);
+        lat.textContent = \`HTTP \${res.status} (\${elapsed}ms)\`;
 
         if (!res.ok) {
-          const err = await res.text();
-          out.textContent = \`Error (\${res.status}):\n\${err}\`;
+          out.textContent = 'Error:\n' + await res.text();
           return;
         }
 
         const data = await res.json();
-        if (data.choices?.[0]?.message?.content) {
-          out.textContent = data.choices[0].message.content;
-        } else if (data.content?.[0]?.text) {
-          out.textContent = data.content[0].text;
-        } else {
-          out.textContent = JSON.stringify(data, null, 2);
-        }
+        out.textContent = data.choices?.[0]?.message?.content || data.content?.[0]?.text || JSON.stringify(data, null, 2);
       } catch (err) {
-        status.textContent = 'Failed';
-        out.textContent = 'Request failed: ' + err.message;
+        lat.textContent = 'Error';
+        out.textContent = 'Fetch failed: ' + err.message;
       } finally {
         btn.disabled = false;
-        btn.classList.remove('opacity-50');
       }
     }
 
-    // Initial Load
-    fetchData();
-    loadAccounts();
-    loadCatalog();
+    function copyText(text) {
+      navigator.clipboard.writeText(text);
+      alert('Copied to clipboard: ' + text);
+    }
+
+    function refreshAll() {
+      loadUsageData();
+      loadCatalogView();
+    }
+
+    // Auto-detect current port in browser
+    if (typeof window !== 'undefined' && window.location.port) {
+      document.getElementById('sidebar-port').textContent = window.location.port;
+      const base = window.location.protocol + '//' + window.location.hostname + ':' + window.location.port;
+      document.getElementById('cfg-openai-url').textContent = base + '/v1';
+      document.getElementById('cfg-claude-url').textContent = base + '/v1';
+    }
+
+    // Initialize
+    loadUsageData();
+    loadCatalogView();
   </script>
 </body>
 </html>

@@ -9,6 +9,8 @@ import {
   getApiKeys,
   getSettings,
   getModelAliases,
+  getCombos,
+  getProxyPools,
 } from "./lib/localDb.js";
 import { buildModelsList } from "./modelsHandler.js";
 
@@ -104,6 +106,46 @@ export function registerDashboardRoutes(app) {
       const catalog = await buildModelsList(["llm"]);
       const aliases = await getModelAliases();
       return c.json({ models: catalog.data || [], aliases: aliases || {} });
+    } catch (err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+
+  // Combos list
+  app.get("/api/dashboard/combos", async (c) => {
+    try {
+      const combos = await getCombos();
+      return c.json(combos);
+    } catch (err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+
+  // Settings (Token Saver, RTK, Headroom, Security)
+  app.get("/api/dashboard/settings", async (c) => {
+    try {
+      const settings = await getSettings();
+      return c.json(settings);
+    } catch (err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+
+  // API Keys
+  app.get("/api/dashboard/keys", async (c) => {
+    try {
+      const keys = await getApiKeys();
+      return c.json(keys);
+    } catch (err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+
+  // Proxy Pools
+  app.get("/api/dashboard/proxy-pools", async (c) => {
+    try {
+      const pools = await getProxyPools();
+      return c.json(pools);
     } catch (err) {
       return c.json({ error: err.message }, 500);
     }
