@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "open-sse/*": ["./open-sse/*"],
+      "open-sse": ["./open-sse/index.js"]
+    },
+    "allowJs": true,
+    "checkJs": false,
+    "skipLibCheck": true
+  }
+}
