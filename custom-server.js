@@ -230,14 +230,19 @@ http.createServer = (...args) => {
   return server;
 };
 
-if (require.main === module) {
+function startMain() {
   const standalone = path.join(__dirname, "server.js");
   if (fs.existsSync(standalone)) {
     require(standalone);
   } else {
-    // Exact same start mechanism as 9router-fix
     const nextBin = require.resolve("next/dist/bin/next");
     process.argv = [process.argv[0], nextBin, "start", ...process.argv.slice(2)];
     require(nextBin);
   }
 }
+
+if (require.main === module || process.env._NINEROUTER_CLI === "1") {
+  startMain();
+}
+
+module.exports = { startMain };

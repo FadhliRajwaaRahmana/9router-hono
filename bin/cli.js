@@ -31,9 +31,11 @@ Options:
 
 process.env.PORT = String(port);
 process.env.HOSTNAME = host;
+process.env._NINEROUTER_CLI = "1";
 
 const rootDir = path.resolve(__dirname, "..");
 process.chdir(rootDir);
 
 // Launch custom-server.js
-require(path.join(rootDir, "custom-server.js"));
+const { startMain } = require(path.join(rootDir, "custom-server.js"));
+startMain();
