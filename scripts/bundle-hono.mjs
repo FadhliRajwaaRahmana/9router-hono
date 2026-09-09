@@ -19,9 +19,6 @@ await esbuild.build({
     "@": path.join(root, "src"),
     "open-sse": path.join(root, "open-sse"),
   },
-  loader: {
-    ".html": "text"
-  },
   external: [
     "better-sqlite3",
     "sql.js",

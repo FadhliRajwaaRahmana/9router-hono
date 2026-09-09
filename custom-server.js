@@ -59,14 +59,7 @@ function isHonoFastPathCandidate(method, url) {
   const upperMethod = (method || "GET").toUpperCase();
 
   const pathname = url.split("?")[0];
-  if (
-    pathname === "/dashboard" ||
-    pathname === "/" ||
-    pathname.startsWith("/api/dashboard/") ||
-    pathname === "/v1/models" ||
-    pathname === "/api/v1/models" ||
-    pathname.startsWith("/v1/models/")
-  ) {
+  if (pathname === "/v1/models" || pathname === "/api/v1/models" || pathname.startsWith("/v1/models/")) {
     return true;
   }
 
@@ -146,7 +139,7 @@ async function pipeWebResponseToNode(webRes, nodeRes) {
   }
 }
 
-// Wrap Next HTTP server: derive client IP, handle Hono Fast-Path, pass everything else to Next.js
+// Wrap Next HTTP server: intercept fast-path LLM routes via Hono, serve 100% Next.js dashboard UI
 http.createServer = (...args) => {
   const handler = args.find((a) => typeof a === "function");
   const rest = args.filter((a) => typeof a !== "function");
@@ -181,7 +174,7 @@ http.createServer = (...args) => {
       }
     }
 
-    // 🖥️ FULL NEXT.JS DASHBOARD & SYSTEM APIS: Handled by original Next.js server
+    // 🖥️ 100% ORIGINAL 9ROUTER-FIX DASHBOARD: All other requests handled by original Next.js server
     return handler(req, res);
   };
 
@@ -242,6 +235,7 @@ function startMain() {
   if (fs.existsSync(standalone)) {
     require(standalone);
   } else {
+    // Exact same start mechanism as 9router-fix
     const nextBin = require.resolve("next/dist/bin/next");
     process.argv = [process.argv[0], nextBin, "start", ...process.argv.slice(2)];
     require(nextBin);
