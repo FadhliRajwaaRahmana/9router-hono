@@ -33315,7 +33315,7 @@ var init_package = __esm({
   "package.json"() {
     package_default = {
       name: "9router-hono",
-      version: "0.3.2",
+      version: "0.4.0",
       description: "9Router local AI gateway + full original Next.js dashboard with Hono sub-millisecond fast-path engine",
       bin: {
         "9router-hono": "./bin/cli.js"
@@ -52873,7 +52873,7 @@ var dashboard_default = `<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>9Router Hono \u2014 Control Plane</title>
+  <title>9Router Hono \u2014 Ultra-Fast Control Plane</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -52891,23 +52891,22 @@ var dashboard_default = `<!DOCTYPE html>
           },
           colors: {
             brand: {
-              400: '#22d3ee',
-              500: '#06b6d4',
-              600: '#0891b2',
+              400: '#38bdf8',
+              500: '#0ea5e9',
+              600: '#0284c7',
             },
-            surface: {
-              DEFAULT: '#161b22',
-              card: '#21262d',
-              hover: '#30363d',
-            },
-            bg: {
-              DEFAULT: '#0d1117',
-              alt: '#161b22',
-            },
-            border: {
-              DEFAULT: '#30363d',
-              subtle: '#21262d',
+            dark: {
+              950: '#090b10',
+              900: '#0f131a',
+              850: '#151b24',
+              800: '#1c2430',
+              700: '#283344',
             }
+          },
+          boxShadow: {
+            'glow-cyan': '0 0 20px -3px rgba(14, 165, 233, 0.35)',
+            'glow-emerald': '0 0 20px -3px rgba(16, 185, 129, 0.35)',
+            'glow-violet': '0 0 20px -3px rgba(139, 92, 246, 0.35)',
           }
         }
       }
@@ -52915,159 +52914,176 @@ var dashboard_default = `<!DOCTYPE html>
   </script>
   <style>
     body {
-      background-color: #0d1117;
-      color: #f0f6fc;
+      background-color: #090b10;
+      color: #f1f5f9;
     }
     .material-symbols-outlined {
       font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
       vertical-align: middle;
     }
     .custom-scrollbar::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
+      width: 5px;
+      height: 5px;
     }
     .custom-scrollbar::-webkit-scrollbar-track {
       background: transparent;
     }
     .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: #30363d;
+      background: #283344;
       border-radius: 9999px;
     }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-      background: #06b6d4;
+      background: #0ea5e9;
     }
-    .landing-grid {
-      background-size: 32px 32px;
+    .ambient-mesh {
+      background: 
+        radial-gradient(circle at 15% 15%, rgba(14, 165, 233, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 20%, rgba(139, 92, 246, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 50% 80%, rgba(16, 185, 129, 0.06) 0%, transparent 50%);
+    }
+    .grid-lines {
+      background-size: 40px 40px;
       background-image: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
                         linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
     }
-    .nav-btn.active {
-      background: rgba(6, 182, 212, 0.15);
-      color: #22d3ee;
-      border-left: 3px solid #06b6d4;
+    .glass-panel {
+      background: rgba(15, 19, 26, 0.75);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.07);
     }
-    .nav-btn.active .material-symbols-outlined {
+    .nav-tab.active {
+      background: linear-gradient(90deg, rgba(14, 165, 233, 0.15) 0%, rgba(14, 165, 233, 0.03) 100%);
+      color: #38bdf8;
+      border-left: 3px solid #0ea5e9;
+    }
+    .nav-tab.active .material-symbols-outlined {
       font-variation-settings: 'FILL' 1;
-      color: #22d3ee;
+      color: #38bdf8;
     }
-    .toast-animate {
-      animation: slideIn 0.2s ease-out;
+    @keyframes pulse-fast {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.1); }
     }
-    @keyframes slideIn {
-      from { transform: translateY(-10px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
+    .pulse-dot {
+      animation: pulse-fast 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    .toast-pop {
+      animation: toastIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes toastIn {
+      from { transform: translateY(-12px) scale(0.95); opacity: 0; }
+      to { transform: translateY(0) scale(1); opacity: 1; }
     }
   </style>
 </head>
-<body class="flex h-screen w-full overflow-hidden antialiased selection:bg-brand-500 selection:text-black">
+<body class="flex h-screen w-full overflow-hidden antialiased selection:bg-sky-500 selection:text-black">
 
-  <!-- Toast Notification Container -->
-  <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+  <!-- Toast Notification System -->
+  <div id="toast-shelf" class="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
-  <!-- Mobile Drawer Overlay -->
-  <div id="drawer-overlay" onclick="toggleSidebar(false)" class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden hidden"></div>
+  <!-- Mobile Drawer Backdrop -->
+  <div id="drawer-backdrop" onclick="toggleMobileNav(false)" class="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm lg:hidden hidden transition-all duration-300"></div>
 
-  <!-- Left Sidebar (Full Navigation Aligned with 9Router) -->
-  <aside id="app-sidebar" class="fixed lg:static inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-[#21262d] bg-[#161b22]/95 backdrop-blur-xl transition-transform duration-300 -translate-x-full lg:translate-x-0 min-h-full">
+  <!-- Left Sidebar Navigation -->
+  <aside id="app-sidebar" class="fixed lg:static inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-white/5 bg-dark-900/95 backdrop-blur-2xl transition-transform duration-300 -translate-x-full lg:translate-x-0 min-h-full">
     
-    <!-- Traffic lights dots -->
-    <div class="flex items-center gap-2 px-6 pt-5 pb-2">
-      <div class="w-3 h-3 rounded-full bg-[#FF5F56]"></div>
-      <div class="w-3 h-3 rounded-full bg-[#FFBD2E]"></div>
-      <div class="w-3 h-3 rounded-full bg-[#27C93F]"></div>
-      <button onclick="toggleSidebar(false)" class="ml-auto lg:hidden text-gray-400 hover:text-white p-1">
-        <span class="material-symbols-outlined text-[18px]">close</span>
-      </button>
-    </div>
+    <!-- Window Traffic Dots & Header -->
+    <div class="px-5 pt-4 pb-3 border-b border-white/5">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-1.5">
+          <div class="w-2.5 h-2.5 rounded-full bg-[#ff5f56] opacity-80"></div>
+          <div class="w-2.5 h-2.5 rounded-full bg-[#ffbd2e] opacity-80"></div>
+          <div class="w-2.5 h-2.5 rounded-full bg-[#27c93f] opacity-80"></div>
+        </div>
+        <button onclick="toggleMobileNav(false)" class="lg:hidden text-gray-400 hover:text-white p-1">
+          <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
+      </div>
 
-    <!-- 9Router Logo Brand (Cyan & Indigo Edition) -->
-    <div class="px-6 py-4 flex flex-col gap-2">
-      <a href="/dashboard" class="flex items-center gap-3">
-        <div class="flex items-center justify-center size-9 rounded-[10px] bg-gradient-to-br from-cyan-400 via-teal-500 to-blue-600 shadow-[0_2px_14px_-2px_rgba(6,182,212,0.4)]">
-          <span class="material-symbols-outlined text-black text-[20px] font-bold">bolt</span>
+      <!-- App Brand Identity -->
+      <a href="/dashboard" class="flex items-center gap-3 group">
+        <div class="flex items-center justify-center size-9 rounded-xl bg-gradient-to-br from-sky-400 via-indigo-500 to-purple-600 shadow-glow-cyan">
+          <span class="material-symbols-outlined text-black font-bold text-[20px]">bolt</span>
         </div>
         <div class="flex flex-col">
           <div class="flex items-center gap-1.5">
-            <h1 class="text-base font-bold tracking-tight text-white">9Router Hono</h1>
-            <span class="px-1.5 py-0.5 text-[9px] font-mono font-bold rounded bg-cyan-950 text-cyan-400 border border-cyan-800/60">v0.4.0</span>
+            <h1 class="text-sm font-bold tracking-tight text-white group-hover:text-sky-400 transition-colors">9Router Hono</h1>
+            <span class="px-1.5 py-0.5 text-[9px] font-mono font-bold rounded-md bg-sky-950 text-sky-400 border border-sky-800/50">v0.4.1</span>
           </div>
-          <span class="text-xs text-gray-400 font-mono flex items-center gap-1.5">
-            <span class="size-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            Hono Engine (<span id="port-label">20129</span>)
+          <span class="text-[11px] text-gray-400 font-mono flex items-center gap-1.5 mt-0.5">
+            <span class="size-1.5 rounded-full bg-emerald-400 pulse-dot"></span>
+            Hono Engine (<span id="port-display">20129</span>)
           </span>
         </div>
       </a>
     </div>
 
-    <!-- Sidebar Navigation Menu -->
-    <nav class="flex-1 px-4 py-2 space-y-0.5 overflow-y-auto custom-scrollbar">
+    <!-- Navigation Menu Items -->
+    <nav class="flex-1 px-3 py-3 space-y-1 overflow-y-auto custom-scrollbar">
       
-      <button onclick="navigate('endpoint')" id="nav-endpoint" class="nav-btn active w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-gray-400 hover:bg-surface-card hover:text-white transition-all text-left">
+      <div class="px-3 py-1 text-[10px] font-mono font-semibold uppercase tracking-wider text-gray-500">Core Gateway</div>
+
+      <button onclick="route('endpoint')" id="tab-endpoint" class="nav-tab active w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-gray-300 hover:bg-white/5 transition-all text-left">
         <span class="material-symbols-outlined text-[18px]">api</span>
-        <span>Endpoint & Key</span>
+        <span>Endpoint & Keys</span>
       </button>
 
-      <button onclick="navigate('providers')" id="nav-providers" class="nav-btn w-full flex items-center justify-between px-3 py-2 rounded-lg text-[13px] font-medium text-gray-400 hover:bg-surface-card hover:text-white transition-all text-left">
+      <button onclick="route('providers')" id="tab-providers" class="nav-tab w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-gray-300 hover:bg-white/5 transition-all text-left">
         <div class="flex items-center gap-3">
           <span class="material-symbols-outlined text-[18px]">dns</span>
-          <span>Providers</span>
+          <span>Providers & Accounts</span>
         </div>
-        <span id="badge-accounts" class="px-2 py-0.5 text-[10px] font-mono rounded bg-surface-card text-cyan-400 font-semibold">...</span>
+        <span id="badge-accounts-count" class="px-2 py-0.5 text-[10px] font-mono rounded bg-dark-800 text-sky-400 border border-white/5 font-semibold">...</span>
       </button>
 
-      <button onclick="navigate('combos')" id="nav-combos" class="nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-gray-400 hover:bg-surface-card hover:text-white transition-all text-left">
+      <button onclick="route('combos')" id="tab-combos" class="nav-tab w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-gray-300 hover:bg-white/5 transition-all text-left">
         <span class="material-symbols-outlined text-[18px]">layers</span>
-        <span>Combo & Vision Adapter</span>
+        <span>Combos & Adapters</span>
       </button>
 
-      <button onclick="navigate('usage')" id="nav-usage" class="nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-gray-400 hover:bg-surface-card hover:text-white transition-all text-left">
+      <button onclick="route('usage')" id="tab-usage" class="nav-tab w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-gray-300 hover:bg-white/5 transition-all text-left">
         <span class="material-symbols-outlined text-[18px]">bar_chart</span>
-        <span>Usage</span>
+        <span>Usage & Telemetry</span>
       </button>
 
-      <button onclick="navigate('tokensaver')" id="nav-tokensaver" class="nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-gray-400 hover:bg-surface-card hover:text-white transition-all text-left">
+      <button onclick="route('tokensaver')" id="tab-tokensaver" class="nav-tab w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-gray-300 hover:bg-white/5 transition-all text-left">
         <span class="material-symbols-outlined text-[18px]">savings</span>
-        <span>Token Saver</span>
+        <span>Token Saver & Optimizations</span>
       </button>
 
-      <!-- Divider -->
-      <div class="pt-4 mt-2 space-y-0.5 border-t border-[#21262d]">
-        <p class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 font-mono">
-          Developer & Diagnostics
-        </p>
+      <div class="pt-4 mt-2 border-t border-white/5 px-3 py-1 text-[10px] font-mono font-semibold uppercase tracking-wider text-gray-500">Diagnostics</div>
 
-        <button onclick="navigate('playground')" id="nav-playground" class="nav-btn w-full flex items-center justify-between px-3 py-2 rounded-lg text-[13px] font-medium text-gray-400 hover:bg-surface-card hover:text-white transition-all text-left">
-          <div class="flex items-center gap-3">
-            <span class="material-symbols-outlined text-[18px]">terminal</span>
-            <span>Live Playground</span>
-          </div>
-          <span class="px-1.5 py-0.2 text-[9px] font-mono font-bold rounded bg-cyan-950 text-cyan-400 border border-cyan-800/40">FAST</span>
-        </button>
+      <button onclick="route('playground')" id="tab-playground" class="nav-tab w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-gray-300 hover:bg-white/5 transition-all text-left">
+        <div class="flex items-center gap-3">
+          <span class="material-symbols-outlined text-[18px]">terminal</span>
+          <span>Live Playground</span>
+        </div>
+        <span class="px-1.5 py-0.5 text-[9px] font-mono font-bold rounded bg-emerald-950 text-emerald-400 border border-emerald-800/40">SUB-MS</span>
+      </button>
 
-        <button onclick="navigate('catalog')" id="nav-catalog" class="nav-btn w-full flex items-center justify-between px-3 py-2 rounded-lg text-[13px] font-medium text-gray-400 hover:bg-surface-card hover:text-white transition-all text-left">
-          <div class="flex items-center gap-3">
-            <span class="material-symbols-outlined text-[18px]">inventory_2</span>
-            <span>Model Catalog</span>
-          </div>
-          <span id="badge-models" class="px-2 py-0.5 text-[10px] font-mono rounded bg-surface-card text-gray-300 font-semibold">...</span>
-        </button>
+      <button onclick="route('catalog')" id="tab-catalog" class="nav-tab w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-gray-300 hover:bg-white/5 transition-all text-left">
+        <div class="flex items-center gap-3">
+          <span class="material-symbols-outlined text-[18px]">inventory_2</span>
+          <span>Model Catalog</span>
+        </div>
+        <span id="badge-models-count" class="px-2 py-0.5 text-[10px] font-mono rounded bg-dark-800 text-gray-300 border border-white/5 font-semibold">...</span>
+      </button>
 
-        <button onclick="navigate('logs')" id="nav-logs" class="nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-gray-400 hover:bg-surface-card hover:text-white transition-all text-left">
-          <span class="material-symbols-outlined text-[18px]">description</span>
-          <span>Console Log</span>
-        </button>
-      </div>
+      <button onclick="route('logs')" id="tab-logs" class="nav-tab w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-gray-300 hover:bg-white/5 transition-all text-left">
+        <span class="material-symbols-outlined text-[18px]">description</span>
+        <span>Console Logs</span>
+      </button>
 
     </nav>
 
-    <!-- Footer Local Storage indicator -->
-    <div class="p-4 border-t border-[#21262d] bg-[#12161c]">
-      <div class="flex items-center justify-between text-xs text-gray-400 mb-1">
+    <!-- Sidebar Bottom Status Footer -->
+    <div class="p-3.5 border-t border-white/5 bg-dark-950/80">
+      <div class="flex items-center justify-between text-xs mb-1">
         <div class="flex items-center gap-2">
-          <span class="size-2 rounded-full bg-emerald-400"></span>
+          <span class="size-2 rounded-full bg-emerald-400 shadow-glow-emerald"></span>
           <span class="font-medium text-gray-200">Local Mode</span>
         </div>
-        <span class="text-[10px] font-mono text-cyan-400">SQLite Active</span>
+        <span class="text-[10px] font-mono text-sky-400 font-semibold">SQLite Active</span>
       </div>
       <div class="text-[10px] text-gray-500 font-mono truncate">
         ~/.9router/db/data.sqlite
@@ -53075,251 +53091,284 @@ var dashboard_default = `<!DOCTYPE html>
     </div>
   </aside>
 
-  <!-- Right App Container -->
-  <div class="flex flex-col flex-1 h-full min-w-0 relative isolate">
-    <div class="landing-grid absolute inset-0 pointer-events-none -z-10" aria-hidden="true"></div>
+  <!-- Right App Content Stage -->
+  <div class="flex flex-col flex-1 h-full min-w-0 relative isolate ambient-mesh">
+    <div class="grid-lines absolute inset-0 pointer-events-none -z-10" aria-hidden="true"></div>
 
-    <!-- Header bar -->
-    <header class="h-14 border-b border-[#21262d] bg-[#0d1117]/80 backdrop-blur-md px-6 flex items-center justify-between z-10">
+    <!-- Top App Bar -->
+    <header class="h-14 border-b border-white/5 bg-dark-900/60 backdrop-blur-xl px-6 flex items-center justify-between z-10">
       <div class="flex items-center gap-3">
-        <button onclick="toggleSidebar(true)" class="lg:hidden p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-surface-card">
+        <button onclick="toggleMobileNav(true)" class="lg:hidden p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5">
           <span class="material-symbols-outlined">menu</span>
         </button>
-        <h2 id="top-title" class="text-sm font-semibold text-white tracking-tight">
-          Endpoint & Key
+        <h2 id="view-title" class="text-sm font-bold text-white tracking-tight flex items-center gap-2">
+          Endpoint & Keys
         </h2>
       </div>
 
       <div class="flex items-center gap-3">
-        <span class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-950/70 text-emerald-400 border border-emerald-800/40 text-xs font-mono">
-          <span class="size-1.5 rounded-full bg-emerald-400"></span>
-          Hono RegExpRouter &lt; 0.5ms
-        </span>
+        <div class="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/50 border border-emerald-800/40 text-xs font-mono text-emerald-400">
+          <span class="size-1.5 rounded-full bg-emerald-400 pulse-dot"></span>
+          Latency &lt; 0.45ms
+        </div>
 
-        <button onclick="refreshCurrent()" class="px-3 py-1.5 rounded-lg bg-surface-card hover:bg-surface-hover border border-[#30363d] text-xs text-gray-300 hover:text-white flex items-center gap-1.5 transition-all shadow-sm">
+        <button onclick="manualRefresh()" class="px-3 py-1.5 rounded-lg bg-dark-800 hover:bg-dark-700 border border-white/10 text-xs text-gray-200 hover:text-white flex items-center gap-1.5 transition-all shadow-sm">
           <span class="material-symbols-outlined text-[16px]">refresh</span>
           <span class="font-medium">Refresh</span>
         </button>
       </div>
     </header>
 
-    <!-- Scrollable Workspace Views -->
-    <main class="flex-1 overflow-y-auto custom-scrollbar p-6 lg:p-10">
+    <!-- Scrollable Panel Viewport -->
+    <main class="flex-1 overflow-y-auto custom-scrollbar p-5 lg:p-8">
       <div class="max-w-7xl mx-auto space-y-6">
 
         <!-- ======================================================== -->
-        <!-- TAB 1: ENDPOINT & KEY                                    -->
+        <!-- VIEW 1: ENDPOINT & KEYS                                  -->
         <!-- ======================================================== -->
-        <div id="view-endpoint" class="view-panel space-y-6">
-          <div class="bg-surface border border-[#30363d] rounded-xl p-5 space-y-5">
+        <div id="panel-endpoint" class="view-stage space-y-6">
+          <div class="glass-panel rounded-2xl p-6 space-y-6">
             <div>
-              <h3 class="text-base font-semibold text-white">Endpoint Configuration</h3>
-              <p class="text-xs text-gray-400 mt-0.5">Sub-millisecond local routing endpoints powered by Hono</p>
+              <h3 class="text-base font-bold text-white">Local Gateway Endpoints</h3>
+              <p class="text-xs text-gray-400 mt-1">Connect your Claude Code CLI, Cursor, Aider, or OpenAI SDK directly to this sub-millisecond local Hono proxy.</p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 font-mono text-xs">
-              <div class="bg-bg-alt p-3.5 rounded-lg border border-[#30363d] flex flex-col justify-between">
-                <span class="text-[11px] text-gray-400 uppercase tracking-wider font-semibold">OpenAI Compatible URL</span>
-                <div class="mt-2 flex items-center justify-between">
-                  <span id="lbl-openai-url" class="text-cyan-400 font-bold">http://localhost:20129/v1</span>
-                  <button onclick="copyText('http://localhost:20129/v1')" class="px-2 py-0.5 bg-surface-card hover:bg-surface-hover rounded text-[11px] text-white">Copy</button>
+            <!-- Copyable URL Boxes -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono text-xs">
+              <div class="bg-dark-900 p-4 rounded-xl border border-white/5 flex flex-col justify-between">
+                <span class="text-[11px] text-gray-400 uppercase tracking-wider font-semibold flex items-center justify-between">
+                  <span>OpenAI Compatible Base URL</span>
+                  <span class="text-sky-400">/v1</span>
+                </span>
+                <div class="mt-3 flex items-center justify-between bg-dark-950 p-2.5 rounded-lg border border-white/5">
+                  <span id="url-openai" class="text-sky-400 font-bold">http://localhost:20129/v1</span>
+                  <button onclick="copyString('http://localhost:20129/v1')" class="px-2.5 py-1 bg-dark-800 hover:bg-dark-700 text-white rounded text-xs transition-colors">Copy</button>
                 </div>
               </div>
 
-              <div class="bg-bg-alt p-3.5 rounded-lg border border-[#30363d] flex flex-col justify-between">
-                <span class="text-[11px] text-gray-400 uppercase tracking-wider font-semibold">Claude Messages URL</span>
-                <div class="mt-2 flex items-center justify-between">
-                  <span id="lbl-claude-url" class="text-emerald-400 font-bold">http://localhost:20129/v1</span>
-                  <button onclick="copyText('http://localhost:20129/v1')" class="px-2 py-0.5 bg-surface-card hover:bg-surface-hover rounded text-[11px] text-white">Copy</button>
+              <div class="bg-dark-900 p-4 rounded-xl border border-white/5 flex flex-col justify-between">
+                <span class="text-[11px] text-gray-400 uppercase tracking-wider font-semibold flex items-center justify-between">
+                  <span>Claude Messages Base URL</span>
+                  <span class="text-emerald-400">/v1</span>
+                </span>
+                <div class="mt-3 flex items-center justify-between bg-dark-950 p-2.5 rounded-lg border border-white/5">
+                  <span id="url-claude" class="text-emerald-400 font-bold">http://localhost:20129/v1</span>
+                  <button onclick="copyString('http://localhost:20129/v1')" class="px-2.5 py-1 bg-dark-800 hover:bg-dark-700 text-white rounded text-xs transition-colors">Copy</button>
                 </div>
               </div>
             </div>
 
-            <div class="space-y-3 pt-2">
-              <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 font-mono">Integration Commands</h4>
-              <div class="bg-bg-alt p-3.5 rounded-lg border border-[#30363d] font-mono text-xs space-y-1.5">
-                <div class="text-[11px] text-cyan-400 font-bold">Claude Code CLI:</div>
-                <div class="bg-[#0d1117] p-2.5 rounded text-gray-300 overflow-x-auto select-all">ANTHROPIC_BASE_URL="http://localhost:20129" claude</div>
-              </div>
-              <div class="bg-bg-alt p-3.5 rounded-lg border border-[#30363d] font-mono text-xs space-y-1.5">
-                <div class="text-[11px] text-emerald-400 font-bold">Cursor / Aider / OpenAI SDK:</div>
-                <div class="bg-[#0d1117] p-2.5 rounded text-gray-300 overflow-x-auto select-all">OPENAI_BASE_URL="http://localhost:20129/v1" OPENAI_API_KEY="sk-any-key"</div>
-              </div>
-            </div>
-
-            <!-- API Keys Section with Add Key Modal Button -->
-            <div class="pt-4 border-t border-[#30363d] space-y-3">
-              <div class="flex items-center justify-between">
-                <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 font-mono">Active API Keys</h4>
-                <div class="flex items-center gap-2">
-                  <input type="text" id="inp-new-key-name" placeholder="New Key Name..." class="bg-bg-alt border border-[#30363d] rounded px-2 py-1 text-xs text-white font-mono placeholder-gray-500">
-                  <button onclick="createNewApiKey()" class="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 text-white rounded text-xs font-medium flex items-center gap-1 font-mono">
-                    <span class="material-symbols-outlined text-[14px]">add</span> Add Key
+            <!-- Command Line Setup Snippets -->
+            <div class="space-y-3">
+              <h4 class="text-xs font-mono font-bold uppercase tracking-wider text-gray-400">Instant Terminal Launchers</h4>
+              
+              <div class="bg-dark-900 p-4 rounded-xl border border-white/5 space-y-2 font-mono text-xs">
+                <div class="text-[11px] text-sky-400 font-semibold flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-[16px]">terminal</span> Claude Code CLI Environment:
+                </div>
+                <div class="bg-dark-950 p-3 rounded-lg border border-white/5 text-gray-300 select-all flex items-center justify-between">
+                  <span>ANTHROPIC_BASE_URL="http://localhost:20129" claude</span>
+                  <button onclick="copyString('ANTHROPIC_BASE_URL=\\"http://localhost:20129\\" claude')" class="text-gray-400 hover:text-white">
+                    <span class="material-symbols-outlined text-[16px]">content_copy</span>
                   </button>
                 </div>
               </div>
-              <div id="list-keys" class="space-y-2 font-mono text-xs"></div>
+
+              <div class="bg-dark-900 p-4 rounded-xl border border-white/5 space-y-2 font-mono text-xs">
+                <div class="text-[11px] text-emerald-400 font-semibold flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-[16px]">code</span> Cursor / Aider / OpenAI SDK:
+                </div>
+                <div class="bg-dark-950 p-3 rounded-lg border border-white/5 text-gray-300 select-all flex items-center justify-between">
+                  <span>OPENAI_BASE_URL="http://localhost:20129/v1" OPENAI_API_KEY="sk-any-key"</span>
+                  <button onclick="copyString('OPENAI_BASE_URL=\\"http://localhost:20129/v1\\" OPENAI_API_KEY=\\"sk-any-key\\"')" class="text-gray-400 hover:text-white">
+                    <span class="material-symbols-outlined text-[16px]">content_copy</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- API Key Management Section -->
+            <div class="pt-4 border-t border-white/5 space-y-4">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h4 class="text-xs font-mono font-bold uppercase tracking-wider text-gray-300">Registered API Keys</h4>
+                  <p class="text-xs text-gray-500">Keys managed locally in your SQLite database</p>
+                </div>
+                <div class="flex items-center gap-2">
+                  <input type="text" id="inp-key-name" placeholder="Key description..." class="bg-dark-950 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-sky-500 font-mono">
+                  <button onclick="addApiKey()" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-medium flex items-center gap-1 transition-colors">
+                    <span class="material-symbols-outlined text-[16px]">add</span> Generate Key
+                  </button>
+                </div>
+              </div>
+
+              <div id="api-keys-container" class="space-y-2 font-mono text-xs"></div>
             </div>
           </div>
         </div>
 
         <!-- ======================================================== -->
-        <!-- TAB 2: PROVIDERS & ACCOUNTS                              -->
+        <!-- VIEW 2: PROVIDERS & ACCOUNTS                             -->
         <!-- ======================================================== -->
-        <div id="view-providers" class="view-panel hidden space-y-4">
-          <div class="bg-surface border border-[#30363d] rounded-xl p-5 space-y-4">
+        <div id="panel-providers" class="view-stage hidden space-y-4">
+          <div class="glass-panel rounded-2xl p-6 space-y-4">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h3 class="text-base font-semibold text-white">Connected Provider Accounts</h3>
-                <p class="text-xs text-gray-400 mt-0.5">Click any account toggle to enable or disable failover routing</p>
+                <h3 class="text-base font-bold text-white">Provider Accounts Pool</h3>
+                <p class="text-xs text-gray-400 mt-1">Live failover accounts with automatic circuit breakers and rate limit cooloff</p>
               </div>
-              <input type="text" id="inp-search-accounts" oninput="filterAccounts()" placeholder="Filter by email, name, provider..." class="w-full sm:w-72 bg-bg-alt border border-[#30363d] rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 font-mono">
+              <input type="text" id="inp-filter-acc" oninput="filterAccountsTable()" placeholder="Search by name, email, provider..." class="w-full sm:w-72 bg-dark-950 border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-sky-500 font-mono">
             </div>
 
-            <div class="overflow-x-auto custom-scrollbar max-h-[600px] border border-[#30363d] rounded-lg">
+            <div class="overflow-x-auto custom-scrollbar max-h-[600px] border border-white/5 rounded-xl">
               <table class="w-full text-left text-xs text-gray-200">
-                <thead class="bg-bg-alt uppercase text-[10px] text-gray-400 font-mono sticky top-0 border-b border-[#30363d]">
+                <thead class="bg-dark-950/80 uppercase text-[10px] text-gray-400 font-mono sticky top-0 border-b border-white/5 backdrop-blur-md">
                   <tr>
-                    <th class="py-2.5 px-3">Provider</th>
-                    <th class="py-2.5 px-3">Account Name / Email</th>
-                    <th class="py-2.5 px-3">Auth Type</th>
-                    <th class="py-2.5 px-3">Action Toggle</th>
-                    <th class="py-2.5 px-3">Priority</th>
-                    <th class="py-2.5 px-3">Account ID</th>
+                    <th class="py-3 px-4">Provider</th>
+                    <th class="py-3 px-4">Account Identifier</th>
+                    <th class="py-3 px-4">Auth Mode</th>
+                    <th class="py-3 px-4">Failover Switch</th>
+                    <th class="py-3 px-4">Priority</th>
+                    <th class="py-3 px-4">ID</th>
                   </tr>
                 </thead>
-                <tbody id="tbl-accounts" class="divide-y divide-[#30363d] font-mono"></tbody>
+                <tbody id="accounts-tbody" class="divide-y divide-white/5 font-mono"></tbody>
               </table>
             </div>
           </div>
         </div>
 
         <!-- ======================================================== -->
-        <!-- TAB 3: COMBOS & VISION ADAPTER                           -->
+        <!-- VIEW 3: COMBOS & VISION ADAPTER                          -->
         <!-- ======================================================== -->
-        <div id="view-combos" class="view-panel hidden space-y-4">
-          <div class="bg-surface border border-[#30363d] rounded-xl p-5 space-y-4">
+        <div id="panel-combos" class="view-stage hidden space-y-4">
+          <div class="glass-panel rounded-2xl p-6 space-y-5">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h3 class="text-base font-semibold text-white">Combo & Vision Adapters</h3>
-                <p class="text-xs text-gray-400 mt-0.5">Multi-model fallback arrays with automatic capacity adapters</p>
+                <h3 class="text-base font-bold text-white">Combo Fallback Pipelines</h3>
+                <p class="text-xs text-gray-400 mt-1">Define multi-model sequential fallbacks with automatic vision capability switching</p>
               </div>
-              <div class="flex items-center gap-2">
-                <input type="text" id="inp-new-combo-name" placeholder="Combo name..." class="bg-bg-alt border border-[#30363d] rounded px-2 py-1 text-xs text-white font-mono">
-                <input type="text" id="inp-new-combo-models" placeholder="model1, model2..." class="bg-bg-alt border border-[#30363d] rounded px-2 py-1 text-xs text-white font-mono">
-                <button onclick="createNewCombo()" class="px-3 py-1 bg-cyan-600 hover:bg-cyan-500 text-white rounded text-xs font-mono font-medium">Create</button>
+              <div class="flex flex-wrap items-center gap-2">
+                <input type="text" id="inp-combo-name" placeholder="Combo Name..." class="bg-dark-950 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white font-mono">
+                <input type="text" id="inp-combo-models" placeholder="model-1, model-2..." class="bg-dark-950 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white font-mono">
+                <button onclick="addCombo()" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-medium font-mono">Create Combo</button>
               </div>
             </div>
-            <div id="list-combos" class="space-y-2.5"></div>
+
+            <div id="combos-container" class="space-y-3"></div>
           </div>
         </div>
 
         <!-- ======================================================== -->
-        <!-- TAB 4: USAGE & ANALYTICS                                 -->
+        <!-- VIEW 4: USAGE & TELEMETRY                                -->
         <!-- ======================================================== -->
-        <div id="view-usage" class="view-panel hidden space-y-6">
-          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-            <div class="bg-surface border border-[#30363d] rounded-xl p-4">
-              <span class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider block mb-1">Total Tokens</span>
-              <div id="st-total-tokens" class="text-xl lg:text-2xl font-bold font-mono text-white">...</div>
+        <div id="panel-usage" class="view-stage hidden space-y-6">
+          
+          <!-- KPI Metric Tiles -->
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="glass-panel rounded-2xl p-5 relative overflow-hidden">
+              <span class="text-[11px] font-mono font-semibold text-gray-400 uppercase tracking-wider block mb-1">Total Tokens Processed</span>
+              <div id="metric-total-tokens" class="text-2xl font-bold font-mono text-white">...</div>
               <div class="mt-2 text-[11px] text-gray-400 font-mono truncate">
-                <span id="st-prompt-tokens" class="text-cyan-400">0</span> in \xB7 <span id="st-comp-tokens" class="text-emerald-400">0</span> out
+                <span id="metric-prompt-tokens" class="text-sky-400">0</span> in \xB7 <span id="metric-comp-tokens" class="text-emerald-400">0</span> out
               </div>
             </div>
 
-            <div class="bg-surface border border-[#30363d] rounded-xl p-4">
-              <span class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider block mb-1">Total Requests</span>
-              <div id="st-total-requests" class="text-xl lg:text-2xl font-bold font-mono text-white">...</div>
+            <div class="glass-panel rounded-2xl p-5 relative overflow-hidden">
+              <span class="text-[11px] font-mono font-semibold text-gray-400 uppercase tracking-wider block mb-1">Total Requests</span>
+              <div id="metric-total-requests" class="text-2xl font-bold font-mono text-white">...</div>
               <div class="mt-2 text-[11px] text-gray-400 font-mono">
-                Across <span id="st-active-acc" class="text-white font-bold">0</span> Accounts
+                Across <span id="metric-active-accounts" class="text-white font-bold">0</span> Accounts
               </div>
             </div>
 
-            <div class="bg-surface border border-[#30363d] rounded-xl p-4">
-              <span class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider block mb-1">Estimated Value</span>
-              <div id="st-total-cost" class="text-xl lg:text-2xl font-bold font-mono text-white">$0.00</div>
-              <div class="mt-2 text-[11px] text-gray-400 font-mono">API Saved Equivalent</div>
+            <div class="glass-panel rounded-2xl p-5 relative overflow-hidden">
+              <span class="text-[11px] font-mono font-semibold text-gray-400 uppercase tracking-wider block mb-1">Estimated Cost Value</span>
+              <div id="metric-total-cost" class="text-2xl font-bold font-mono text-white">$0.00</div>
+              <div class="mt-2 text-[11px] text-gray-400 font-mono">Commercial Value Saved</div>
             </div>
 
-            <div class="bg-surface border border-[#30363d] rounded-xl p-4">
-              <span class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider block mb-1">Routing Overhead</span>
-              <div class="text-xl lg:text-2xl font-bold font-mono text-emerald-400">&lt; 0.45 ms</div>
-              <div class="mt-2 text-[11px] text-gray-400 font-mono">Hono RegExpRouter</div>
+            <div class="glass-panel rounded-2xl p-5 relative overflow-hidden">
+              <span class="text-[11px] font-mono font-semibold text-gray-400 uppercase tracking-wider block mb-1">Hono Core Overhead</span>
+              <div class="text-2xl font-bold font-mono text-emerald-400">&lt; 0.45 ms</div>
+              <div class="mt-2 text-[11px] text-gray-400 font-mono">Sub-Millisecond Engine</div>
             </div>
           </div>
 
-          <div class="bg-surface border border-[#30363d] rounded-xl p-5 space-y-4">
+          <!-- Chart Block -->
+          <div class="glass-panel rounded-2xl p-6 space-y-4">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h3 class="text-sm font-semibold text-white">Token Throughput Timeline</h3>
-                <p class="text-xs text-gray-400 mt-0.5">Historical ledger data from SQLite</p>
+                <h3 class="text-sm font-bold text-white">Token Throughput Timeline</h3>
+                <p class="text-xs text-gray-400 mt-0.5">Historical ledger data loaded from SQLite</p>
               </div>
-              <div class="inline-flex bg-bg-alt p-1 rounded-lg border border-[#30363d]">
-                <button onclick="changePeriod('today')" id="btn-p-today" class="px-3 py-1 text-xs font-medium rounded text-gray-400 hover:text-white transition-all">Today</button>
-                <button onclick="changePeriod('7d')" id="btn-p-7d" class="px-3 py-1 text-xs font-medium rounded text-gray-400 hover:text-white transition-all">7D</button>
-                <button onclick="changePeriod('30d')" id="btn-p-30d" class="px-3 py-1 text-xs font-medium rounded text-gray-400 hover:text-white transition-all">30D</button>
-                <button onclick="changePeriod('60d')" id="btn-p-60d" class="px-3 py-1 text-xs font-medium rounded text-gray-400 hover:text-white transition-all">60D</button>
-                <button onclick="changePeriod('all')" id="btn-p-all" class="px-3 py-1 text-xs font-bold rounded bg-cyan-600 text-white shadow-sm transition-all">All</button>
+              <div class="inline-flex bg-dark-950 p-1 rounded-xl border border-white/5">
+                <button onclick="setChartPeriod('today')" id="btn-period-today" class="px-3 py-1 text-xs font-medium rounded-lg text-gray-400 hover:text-white transition-all">Today</button>
+                <button onclick="setChartPeriod('7d')" id="btn-period-7d" class="px-3 py-1 text-xs font-medium rounded-lg text-gray-400 hover:text-white transition-all">7D</button>
+                <button onclick="setChartPeriod('30d')" id="btn-period-30d" class="px-3 py-1 text-xs font-medium rounded-lg text-gray-400 hover:text-white transition-all">30D</button>
+                <button onclick="setChartPeriod('60d')" id="btn-period-60d" class="px-3 py-1 text-xs font-medium rounded-lg text-gray-400 hover:text-white transition-all">60D</button>
+                <button onclick="setChartPeriod('all')" id="btn-period-all" class="px-3 py-1 text-xs font-bold rounded-lg bg-sky-600 text-white shadow-glow-cyan transition-all">All Time</button>
               </div>
             </div>
             <div class="h-64 lg:h-72 w-full">
-              <canvas id="chart-canvas"></canvas>
+              <canvas id="usage-chart-canvas"></canvas>
             </div>
           </div>
 
+          <!-- Breakdown Grid -->
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="bg-surface border border-[#30363d] rounded-xl p-5 space-y-3">
-              <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 font-mono flex items-center justify-between">
-                <span>Top Models by Volume</span>
-                <span class="text-[10px] text-cyan-400">Ranked by Requests</span>
+            <div class="glass-panel rounded-2xl p-6 space-y-3">
+              <h4 class="text-xs font-mono font-bold uppercase tracking-wider text-gray-400 flex items-center justify-between">
+                <span>Top Models by Requests</span>
+                <span class="text-[10px] text-sky-400 font-normal">Active Breakdown</span>
               </h4>
-              <div id="list-top-models" class="space-y-2 max-h-80 overflow-y-auto custom-scrollbar pr-1"></div>
+              <div id="top-models-shelf" class="space-y-2.5 max-h-80 overflow-y-auto custom-scrollbar pr-1"></div>
             </div>
 
-            <div class="bg-surface border border-[#30363d] rounded-xl p-5 space-y-3">
-              <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 font-mono flex items-center justify-between">
-                <span>Provider Accounts Breakdown</span>
-                <span class="text-[10px] text-emerald-400">Health Pool</span>
+            <div class="glass-panel rounded-2xl p-6 space-y-3">
+              <h4 class="text-xs font-mono font-bold uppercase tracking-wider text-gray-400 flex items-center justify-between">
+                <span>Providers Health Pool</span>
+                <span class="text-[10px] text-emerald-400 font-normal">Accounts Matrix</span>
               </h4>
-              <div id="grid-providers" class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-80 overflow-y-auto custom-scrollbar pr-1"></div>
+              <div id="providers-matrix-shelf" class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-80 overflow-y-auto custom-scrollbar pr-1"></div>
             </div>
           </div>
         </div>
 
         <!-- ======================================================== -->
-        <!-- TAB 5: TOKEN SAVER                                       -->
+        <!-- VIEW 5: TOKEN SAVER                                      -->
         <!-- ======================================================== -->
-        <div id="view-tokensaver" class="view-panel hidden space-y-4">
-          <div class="bg-surface border border-[#30363d] rounded-xl p-5 space-y-4">
+        <div id="panel-tokensaver" class="view-stage hidden space-y-4">
+          <div class="glass-panel rounded-2xl p-6 space-y-4">
             <div>
-              <h3 class="text-base font-semibold text-white">Token Saver & Latency Optimizations</h3>
-              <p class="text-xs text-gray-400 mt-0.5">Interactive toggles for compression, circuit breaker, and keep-alive</p>
+              <h3 class="text-base font-bold text-white">Token Saver & Optimization Engine</h3>
+              <p class="text-xs text-gray-400 mt-1">Fine-tune in-flight RTK compression, keep-alive connections, and failover breakers</p>
             </div>
-            <div id="grid-tokensaver" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs font-mono"></div>
+            <div id="tokensaver-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono"></div>
           </div>
         </div>
 
         <!-- ======================================================== -->
-        <!-- TAB 6: LIVE PLAYGROUND                                   -->
+        <!-- VIEW 6: LIVE PLAYGROUND                                  -->
         <!-- ======================================================== -->
-        <div id="view-playground" class="view-panel hidden space-y-4">
+        <div id="panel-playground" class="view-stage hidden space-y-4">
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="bg-surface border border-[#30363d] rounded-xl p-5 space-y-4">
+            <div class="glass-panel rounded-2xl p-6 space-y-4">
               <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center justify-between">
-                <span>Playground Options</span>
-                <span class="text-cyan-400 font-mono">\u26A1 Direct Route</span>
+                <span>Test Config</span>
+                <span class="text-sky-400 font-mono">\u26A1 Direct Route</span>
               </h3>
 
               <div>
-                <label class="block text-xs text-gray-400 mb-1 font-mono">Model Target</label>
-                <select id="sel-pg-model" class="w-full bg-bg-alt border border-[#30363d] rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-cyan-500 font-mono">
-                  <!-- Populated dynamically -->
+                <label class="block text-xs text-gray-400 mb-1 font-mono">Model Target (680+ Available)</label>
+                <select id="play-sel-model" class="w-full bg-dark-950 border border-white/10 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-sky-500 font-mono">
+                  <!-- Populated automatically -->
                 </select>
               </div>
 
               <div>
                 <label class="block text-xs text-gray-400 mb-1 font-mono">Protocol</label>
-                <select id="sel-pg-proto" class="w-full bg-bg-alt border border-[#30363d] rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-cyan-500 font-mono">
+                <select id="play-sel-proto" class="w-full bg-dark-950 border border-white/10 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-sky-500 font-mono">
                   <option value="/v1/chat/completions">POST /v1/chat/completions (OpenAI Format)</option>
                   <option value="/v1/messages">POST /v1/messages (Claude Format)</option>
                 </select>
@@ -53327,26 +53376,26 @@ var dashboard_default = `<!DOCTYPE html>
 
               <div>
                 <label class="block text-xs text-gray-400 mb-1 font-mono">System Message</label>
-                <textarea id="txt-pg-system" rows="2" class="w-full bg-bg-alt border border-[#30363d] rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-cyan-500 font-mono">You are a helpful AI assistant running on 9router-hono.</textarea>
+                <textarea id="play-txt-system" rows="2" class="w-full bg-dark-950 border border-white/10 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-sky-500 font-mono">You are a helpful AI assistant running on 9router-hono.</textarea>
               </div>
 
               <div>
                 <label class="block text-xs text-gray-400 mb-1 font-mono">User Prompt</label>
-                <textarea id="txt-pg-prompt" rows="3" class="w-full bg-bg-alt border border-[#30363d] rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-cyan-500 font-mono">Tuliskan 1 pantun jenaka tentang programmer dan kopi.</textarea>
+                <textarea id="play-txt-prompt" rows="3" class="w-full bg-dark-950 border border-white/10 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-sky-500 font-mono">Tuliskan 1 pantun jenaka tentang programmer dan kopi.</textarea>
               </div>
 
-              <button onclick="runPlaygroundTest()" id="btn-pg-submit" class="w-full py-2.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-md">
+              <button onclick="executePlayTest()" id="play-btn-send" class="w-full py-3 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-black font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-glow-cyan">
                 <span class="material-symbols-outlined text-[16px]">play_arrow</span>
                 <span>Send Request</span>
               </button>
             </div>
 
-            <div class="lg:col-span-2 bg-surface border border-[#30363d] rounded-xl p-5 flex flex-col">
-              <div class="flex items-center justify-between border-b border-[#30363d] pb-3 mb-3 text-xs">
-                <span class="font-bold text-white uppercase tracking-wider">Stream Output</span>
-                <span id="txt-pg-latency" class="font-mono text-gray-400">Idle</span>
+            <div class="lg:col-span-2 glass-panel rounded-2xl p-6 flex flex-col">
+              <div class="flex items-center justify-between border-b border-white/5 pb-3 mb-3 text-xs">
+                <span class="font-bold text-white uppercase tracking-wider">Stream Response</span>
+                <span id="play-latency-badge" class="font-mono text-gray-400">Idle</span>
               </div>
-              <div id="txt-pg-output" class="flex-1 min-h-[320px] bg-bg-alt rounded-lg p-4 font-mono text-xs text-gray-300 overflow-y-auto whitespace-pre-wrap custom-scrollbar border border-[#30363d]">
+              <div id="play-output-box" class="flex-1 min-h-[350px] bg-dark-950 rounded-xl p-4 font-mono text-xs text-gray-300 overflow-y-auto whitespace-pre-wrap custom-scrollbar border border-white/5">
                 Click "Send Request" to test the ultra-fast Hono pipeline live...
               </div>
             </div>
@@ -53354,45 +53403,47 @@ var dashboard_default = `<!DOCTYPE html>
         </div>
 
         <!-- ======================================================== -->
-        <!-- TAB 7: MODEL CATALOG                                     -->
+        <!-- VIEW 7: MODEL CATALOG                                    -->
         <!-- ======================================================== -->
-        <div id="view-catalog" class="view-panel hidden space-y-4">
-          <div class="bg-surface border border-[#30363d] rounded-xl p-5 space-y-4">
+        <div id="panel-catalog" class="view-stage hidden space-y-4">
+          <div class="glass-panel rounded-2xl p-6 space-y-4">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h3 class="text-base font-semibold text-white">OpenAI Compatible Catalog</h3>
-                <p class="text-xs text-gray-400 mt-0.5">Models advertised through <code class="text-cyan-400">GET /v1/models</code></p>
+                <h3 class="text-base font-bold text-white">Registered Model Catalog</h3>
+                <p class="text-xs text-gray-400 mt-0.5">Models accessible through <code class="text-sky-400">GET /v1/models</code></p>
               </div>
-              <input type="text" id="inp-search-catalog" oninput="filterCatalogCards()" placeholder="Search model name..." class="w-full sm:w-64 bg-bg-alt border border-[#30363d] rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 font-mono">
+              <input type="text" id="inp-filter-models" oninput="filterCatalogDisplay()" placeholder="Search model id..." class="w-full sm:w-64 bg-dark-950 border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-sky-500 font-mono">
             </div>
-            <div id="grid-catalog" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[600px] overflow-y-auto custom-scrollbar pr-1"></div>
+
+            <div id="catalog-cards-shelf" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 max-h-[600px] overflow-y-auto custom-scrollbar pr-1"></div>
           </div>
         </div>
 
         <!-- ======================================================== -->
-        <!-- TAB 8: CONSOLE LOGS                                      -->
+        <!-- VIEW 8: CONSOLE LOGS                                     -->
         <!-- ======================================================== -->
-        <div id="view-logs" class="view-panel hidden space-y-4">
-          <div class="bg-surface border border-[#30363d] rounded-xl p-5 space-y-4">
+        <div id="panel-logs" class="view-stage hidden space-y-4">
+          <div class="glass-panel rounded-2xl p-6 space-y-4">
             <div class="flex items-center justify-between">
               <div>
-                <h3 class="text-base font-semibold text-white">Recent Request Logs</h3>
-                <p class="text-xs text-gray-400 mt-0.5">Activity stream from SQLite usage history</p>
+                <h3 class="text-base font-bold text-white">Ledger Request Logs</h3>
+                <p class="text-xs text-gray-400 mt-0.5">Real-time ledger events recorded by 9router core</p>
               </div>
-              <button onclick="loadLogs()" class="px-3 py-1 bg-bg-alt hover:bg-surface-card border border-[#30363d] text-xs rounded text-white font-mono">Reload</button>
+              <button onclick="fetchLogsData()" class="px-3 py-1.5 bg-dark-800 hover:bg-dark-700 border border-white/10 text-xs rounded-lg text-white font-mono">Reload</button>
             </div>
-            <div class="overflow-x-auto custom-scrollbar max-h-[580px] border border-[#30363d] rounded-lg">
-              <table class="w-full text-left text-xs text-white">
-                <thead class="bg-bg-alt uppercase text-[10px] text-gray-400 font-mono sticky top-0 border-b border-[#30363d]">
+
+            <div class="overflow-x-auto custom-scrollbar max-h-[580px] border border-white/5 rounded-xl">
+              <table class="w-full text-left text-xs text-gray-200">
+                <thead class="bg-dark-950 uppercase text-[10px] text-gray-400 font-mono sticky top-0 border-b border-white/5">
                   <tr>
-                    <th class="py-2.5 px-3">Time</th>
-                    <th class="py-2.5 px-3">Provider</th>
-                    <th class="py-2.5 px-3">Model</th>
-                    <th class="py-2.5 px-3">Tokens (In / Out)</th>
-                    <th class="py-2.5 px-3">Status</th>
+                    <th class="py-3 px-4">Time</th>
+                    <th class="py-3 px-4">Provider</th>
+                    <th class="py-3 px-4">Model</th>
+                    <th class="py-3 px-4">Tokens (In / Out)</th>
+                    <th class="py-3 px-4">Status</th>
                   </tr>
                 </thead>
-                <tbody id="tbl-logs" class="divide-y divide-[#30363d] font-mono"></tbody>
+                <tbody id="logs-tbody" class="divide-y divide-white/5 font-mono"></tbody>
               </table>
             </div>
           </div>
@@ -53403,119 +53454,123 @@ var dashboard_default = `<!DOCTYPE html>
   </div>
 
   <script>
-    var globalChart = null;
-    var activePeriod = 'all';
-    var accountsList = [];
-    var catalogList = [];
+    var usageChartInstance = null;
+    var activeUsagePeriod = 'all';
+    var cachedAccountsList = [];
+    var cachedCatalogList = [];
 
-    function showToast(msg, isErr) {
-      var c = document.getElementById('toast-container');
-      var t = document.createElement('div');
-      t.className = 'toast-animate px-3.5 py-2 rounded-lg text-xs font-mono font-medium shadow-lg border flex items-center gap-2 pointer-events-auto ' +
-        (isErr ? 'bg-red-950/90 text-red-300 border-red-800' : 'bg-emerald-950/90 text-emerald-300 border-emerald-800');
-      t.textContent = msg;
-      c.appendChild(t);
-      setTimeout(function() { t.remove(); }, 3000);
+    function notify(text, isError) {
+      var shelf = document.getElementById('toast-shelf');
+      var item = document.createElement('div');
+      item.className = 'toast-pop px-3.5 py-2.5 rounded-xl text-xs font-mono font-semibold shadow-lg border flex items-center gap-2 pointer-events-auto ' +
+        (isError ? 'bg-rose-950/90 text-rose-300 border-rose-800/80' : 'bg-emerald-950/90 text-emerald-300 border-emerald-800/80');
+      item.textContent = text;
+      shelf.appendChild(item);
+      setTimeout(function() { item.remove(); }, 3200);
     }
 
-    function toggleSidebar(open) {
-      var sidebar = document.getElementById('app-sidebar');
-      var overlay = document.getElementById('drawer-overlay');
-      if (open) {
-        sidebar.classList.remove('-translate-x-full');
-        overlay.classList.remove('hidden');
+    function toggleMobileNav(show) {
+      var bar = document.getElementById('app-sidebar');
+      var bg = document.getElementById('drawer-backdrop');
+      if (show) {
+        bar.classList.remove('-translate-x-full');
+        bg.classList.remove('hidden');
       } else {
-        sidebar.classList.add('-translate-x-full');
-        overlay.classList.add('hidden');
+        bar.classList.add('-translate-x-full');
+        bg.classList.add('hidden');
       }
     }
 
-    function navigate(viewKey) {
-      var panels = document.querySelectorAll('.view-panel');
-      for (var i = 0; i < panels.length; i++) panels[i].classList.add('hidden');
+    function route(viewId) {
+      var stages = document.querySelectorAll('.view-stage');
+      for (var i = 0; i < stages.length; i++) stages[i].classList.add('hidden');
 
-      var navs = document.querySelectorAll('.nav-btn');
-      for (var j = 0; j < navs.length; j++) navs[j].classList.remove('active');
+      var tabs = document.querySelectorAll('.nav-tab');
+      for (var j = 0; j < tabs.length; j++) tabs[j].classList.remove('active');
 
-      var targetPanel = document.getElementById('view-' + viewKey);
-      var targetNav = document.getElementById('nav-' + viewKey);
-      if (targetPanel) targetPanel.classList.remove('hidden');
-      if (targetNav) targetNav.classList.add('active');
+      var targetStage = document.getElementById('panel-' + viewId);
+      var targetTab = document.getElementById('tab-' + viewId);
+      if (targetStage) targetStage.classList.remove('hidden');
+      if (targetTab) targetTab.classList.add('active');
 
-      var titles = {
-        endpoint: 'Endpoint & Key',
+      var labels = {
+        endpoint: 'Endpoint & Keys',
         providers: 'Providers & Accounts',
-        combos: 'Combo & Vision Adapter',
-        usage: 'Usage & Analytics',
-        tokensaver: 'Token Saver',
+        combos: 'Combos & Vision Adapters',
+        usage: 'Usage & Telemetry',
+        tokensaver: 'Token Saver & Optimizations',
         playground: 'Live Playground \u26A1',
         catalog: 'Model Catalog',
-        logs: 'Console Log'
+        logs: 'Console Logs'
       };
-      document.getElementById('top-title').textContent = titles[viewKey] || '9Router';
+      document.getElementById('view-title').textContent = labels[viewId] || 'Dashboard';
 
-      toggleSidebar(false);
+      toggleMobileNav(false);
 
-      if (viewKey === 'endpoint') loadEndpoint();
-      if (viewKey === 'providers') loadAccounts();
-      if (viewKey === 'combos') loadCombos();
-      if (viewKey === 'usage') loadUsage();
-      if (viewKey === 'tokensaver') loadTokenSaver();
-      if (viewKey === 'catalog') loadCatalog();
-      if (viewKey === 'logs') loadLogs();
+      // Keep browser URL cleanly in sync
+      if (window.history && window.history.pushState) {
+        window.history.pushState(null, '', '/dashboard/' + viewId);
+      }
+
+      if (viewId === 'endpoint') fetchKeysData();
+      if (viewId === 'providers') fetchAccountsData();
+      if (viewId === 'combos') fetchCombosData();
+      if (viewId === 'usage') fetchUsageData();
+      if (viewId === 'tokensaver') fetchTokenSaverData();
+      if (viewId === 'catalog') fetchCatalogData();
+      if (viewId === 'logs') fetchLogsData();
     }
 
-    function fmt(n) {
-      if (!n && n !== 0) return '0';
-      if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
-      if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
-      if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
-      return Number(n).toLocaleString();
+    function formatNumber(num) {
+      if (!num && num !== 0) return '0';
+      if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
+      if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
+      if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
+      return Number(num).toLocaleString();
     }
 
-    function changePeriod(p) {
-      activePeriod = p;
+    function setChartPeriod(p) {
+      activeUsagePeriod = p;
       var periods = ['today', '7d', '30d', '60d', 'all'];
       for (var i = 0; i < periods.length; i++) {
         var k = periods[i];
-        var btn = document.getElementById('btn-p-' + k);
+        var btn = document.getElementById('btn-period-' + k);
         if (btn) {
           if (k === p) {
-            btn.className = 'px-3 py-1 text-xs font-bold rounded bg-cyan-600 text-white shadow-sm transition-all';
+            btn.className = 'px-3 py-1 text-xs font-bold rounded-lg bg-sky-600 text-white shadow-glow-cyan transition-all';
           } else {
-            btn.className = 'px-3 py-1 text-xs font-medium rounded text-gray-400 hover:text-white transition-all';
+            btn.className = 'px-3 py-1 text-xs font-medium rounded-lg text-gray-400 hover:text-white transition-all';
           }
         }
       }
-      loadUsage();
+      fetchUsageData();
     }
 
-    function loadUsage() {
+    function fetchUsageData() {
       Promise.all([
-        fetch('/api/dashboard/stats?period=' + activePeriod).then(function(r) { return r.json(); }),
-        fetch('/api/dashboard/chart?period=' + activePeriod).then(function(r) { return r.json(); })
-      ]).then(function(results) {
-        var statsRes = results[0];
-        var chartRes = results[1];
+        fetch('/api/dashboard/stats?period=' + activeUsagePeriod).then(function(r) { return r.json(); }),
+        fetch('/api/dashboard/chart?period=' + activeUsagePeriod).then(function(r) { return r.json(); })
+      ]).then(function(res) {
+        var statsRes = res[0];
+        var chartRes = res[1];
 
         if (statsRes && statsRes.stats) {
           var s = statsRes.stats;
           var totalPrompt = s.totalPromptTokens || 0;
           var totalComp = s.totalCompletionTokens || 0;
-          var totalCached = s.totalCachedTokens || 0;
-          var grandTotal = totalPrompt + totalComp + totalCached;
+          var grandTotal = totalPrompt + totalComp + (s.totalCachedTokens || 0);
 
-          document.getElementById('st-total-tokens').textContent = fmt(grandTotal);
-          document.getElementById('st-prompt-tokens').textContent = fmt(totalPrompt);
-          document.getElementById('st-comp-tokens').textContent = fmt(totalComp);
-          document.getElementById('st-total-requests').textContent = (s.totalRequests || 0).toLocaleString();
-          document.getElementById('st-total-cost').textContent = '$' + (s.totalCost || 0).toFixed(2);
-          document.getElementById('st-active-acc').textContent = statsRes.meta ? (statsRes.meta.totalAccounts || 0) : 0;
-          document.getElementById('badge-accounts').textContent = statsRes.meta ? (statsRes.meta.totalAccounts || 0) : 0;
+          document.getElementById('metric-total-tokens').textContent = formatNumber(grandTotal);
+          document.getElementById('metric-prompt-tokens').textContent = formatNumber(totalPrompt);
+          document.getElementById('metric-comp-tokens').textContent = formatNumber(totalComp);
+          document.getElementById('metric-total-requests').textContent = (s.totalRequests || 0).toLocaleString();
+          document.getElementById('metric-total-cost').textContent = '$' + (s.totalCost || 0).toFixed(2);
+          document.getElementById('metric-active-accounts').textContent = statsRes.meta ? (statsRes.meta.totalAccounts || 0) : 0;
+          document.getElementById('badge-accounts-count').textContent = statsRes.meta ? (statsRes.meta.totalAccounts || 0) : 0;
 
-          // Top models
-          var modelsEl = document.getElementById('list-top-models');
-          modelsEl.innerHTML = '';
+          // Top Models Leaderboard
+          var modelsShelf = document.getElementById('top-models-shelf');
+          modelsShelf.innerHTML = '';
           var sorted = Object.entries(s.byModel || {}).sort(function(a, b) {
             return (b[1].requests || 0) - (a[1].requests || 0);
           }).slice(0, 10);
@@ -53524,67 +53579,67 @@ var dashboard_default = `<!DOCTYPE html>
             var key = item[0];
             var m = item[1];
             var row = document.createElement('div');
-            row.className = 'flex items-center justify-between p-2.5 rounded-lg bg-bg-alt border border-[#30363d]';
-            row.innerHTML = '<div class="flex items-center gap-2.5 min-w-0">' +
-              '<span class="size-6 rounded bg-surface-card text-cyan-400 font-mono font-bold text-xs flex items-center justify-center flex-shrink-0">' + (idx + 1) + '</span>' +
+            row.className = 'flex items-center justify-between p-3 rounded-xl bg-dark-900 border border-white/5';
+            row.innerHTML = '<div class="flex items-center gap-3 min-w-0">' +
+              '<span class="size-6 rounded-lg bg-dark-800 text-sky-400 font-mono font-bold text-xs flex items-center justify-center flex-shrink-0">' + (idx + 1) + '</span>' +
               '<div class="truncate">' +
                 '<div class="text-xs font-semibold text-white truncate">' + (m.rawModel || key) + '</div>' +
-                '<div class="text-[10px] text-gray-400">' + (m.provider || 'default') + '</div>' +
+                '<div class="text-[10px] text-gray-500 font-mono">' + (m.provider || 'default') + '</div>' +
               '</div>' +
             '</div>' +
             '<div class="text-right font-mono text-xs flex-shrink-0">' +
-              '<div class="font-bold text-cyan-300">' + fmt(m.requests) + ' reqs</div>' +
-              '<div class="text-[10px] text-gray-400">' + fmt((m.promptTokens || 0) + (m.completionTokens || 0)) + ' tokens</div>' +
+              '<div class="font-bold text-sky-400">' + formatNumber(m.requests) + ' reqs</div>' +
+              '<div class="text-[10px] text-gray-400">' + formatNumber((m.promptTokens || 0) + (m.completionTokens || 0)) + ' tokens</div>' +
             '</div>';
-            modelsEl.appendChild(row);
+            modelsShelf.appendChild(row);
           });
 
-          // Provider matrix
-          var provEl = document.getElementById('grid-providers');
-          provEl.innerHTML = '';
+          // Providers Matrix
+          var matrixShelf = document.getElementById('providers-matrix-shelf');
+          matrixShelf.innerHTML = '';
           var provs = statsRes.meta ? (statsRes.meta.providers || {}) : {};
           Object.entries(provs).sort(function(a, b) { return b[1] - a[1]; }).forEach(function(p) {
             var card = document.createElement('div');
-            card.className = 'p-3 rounded-lg bg-bg-alt border border-[#30363d] flex flex-col justify-between';
+            card.className = 'p-3.5 rounded-xl bg-dark-900 border border-white/5 flex flex-col justify-between';
             card.innerHTML = '<span class="text-[11px] font-bold text-gray-400 truncate uppercase tracking-wider font-mono">' + p[0] + '</span>' +
               '<div class="mt-2 flex items-baseline justify-between">' +
                 '<span class="text-base font-bold font-mono text-emerald-400">' + p[1] + '</span>' +
                 '<span class="text-[10px] text-gray-500 font-mono">accounts</span>' +
               '</div>';
-            provEl.appendChild(card);
+            matrixShelf.appendChild(card);
           });
         }
 
-        renderChart(chartRes);
+        renderUsageChartCanvas(chartRes);
       }).catch(console.error);
     }
 
-    function renderChart(chartData) {
-      if (!Array.isArray(chartData) || !chartData.length) return;
-      var ctx = document.getElementById('chart-canvas').getContext('2d');
-      if (globalChart) globalChart.destroy();
+    function renderUsageChartCanvas(data) {
+      if (!Array.isArray(data) || !data.length) return;
+      var ctx = document.getElementById('usage-chart-canvas').getContext('2d');
+      if (usageChartInstance) usageChartInstance.destroy();
 
-      var labels = chartData.map(function(d) { return d.label; });
-      var tokens = chartData.map(function(d) { return d.tokens || 0; });
+      var labels = data.map(function(d) { return d.label; });
+      var tokens = data.map(function(d) { return d.tokens || 0; });
 
-      var gradient = ctx.createLinearGradient(0, 0, 0, 260);
-      gradient.addColorStop(0, 'rgba(6, 182, 212, 0.45)');
-      gradient.addColorStop(1, 'rgba(6, 182, 212, 0.0)');
+      var grad = ctx.createLinearGradient(0, 0, 0, 260);
+      grad.addColorStop(0, 'rgba(14, 165, 233, 0.45)');
+      grad.addColorStop(1, 'rgba(14, 165, 233, 0.0)');
 
-      globalChart = new Chart(ctx, {
+      usageChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
           labels: labels,
           datasets: [{
             label: 'Tokens',
             data: tokens,
-            borderColor: '#22d3ee',
+            borderColor: '#38bdf8',
             borderWidth: 2,
-            pointBackgroundColor: '#06b6d4',
-            pointRadius: chartData.length > 40 ? 0 : 2.5,
+            pointBackgroundColor: '#0ea5e9',
+            pointRadius: data.length > 40 ? 0 : 2.5,
             fill: true,
-            backgroundColor: gradient,
-            tension: 0.3,
+            backgroundColor: grad,
+            tension: 0.35,
           }]
         },
         options: {
@@ -53593,10 +53648,10 @@ var dashboard_default = `<!DOCTYPE html>
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: '#161b22',
+              backgroundColor: '#0f131a',
               titleColor: '#fff',
-              bodyColor: '#22d3ee',
-              borderColor: '#30363d',
+              bodyColor: '#38bdf8',
+              borderColor: '#1e293b',
               borderWidth: 1,
               padding: 10,
               displayColors: false,
@@ -53608,14 +53663,14 @@ var dashboard_default = `<!DOCTYPE html>
           scales: {
             x: {
               grid: { color: 'rgba(255,255,255,0.03)' },
-              ticks: { color: '#8b949e', font: { size: 10, family: 'JetBrains Mono' }, maxTicksLimit: 12 }
+              ticks: { color: '#64748b', font: { size: 10, family: 'JetBrains Mono' }, maxTicksLimit: 12 }
             },
             y: {
-              grid: { color: 'rgba(255,255,255,0.05)' },
+              grid: { color: 'rgba(255,255,255,0.04)' },
               ticks: {
-                color: '#8b949e',
+                color: '#64748b',
                 font: { size: 10, family: 'JetBrains Mono' },
-                callback: function(v) { return fmt(v); }
+                callback: function(v) { return formatNumber(v); }
               }
             }
           }
@@ -53623,68 +53678,68 @@ var dashboard_default = `<!DOCTYPE html>
       });
     }
 
-    function loadAccounts() {
-      fetch('/api/dashboard/accounts').then(function(r) { return r.json(); }).then(function(data) {
-        accountsList = data || [];
-        renderAccounts(accountsList);
+    function fetchAccountsData() {
+      fetch('/api/dashboard/accounts').then(function(r) { return r.json(); }).then(function(items) {
+        cachedAccountsList = items || [];
+        renderAccountsTable(cachedAccountsList);
       }).catch(console.error);
     }
 
-    function renderAccounts(list) {
-      var tbody = document.getElementById('tbl-accounts');
+    function renderAccountsTable(items) {
+      var tbody = document.getElementById('accounts-tbody');
       tbody.innerHTML = '';
-      list.forEach(function(a) {
+      items.forEach(function(a) {
         var tr = document.createElement('tr');
-        tr.className = 'hover:bg-surface-card/60 transition-colors';
-        tr.innerHTML = '<td class="py-2.5 px-3 font-semibold text-white">' + (a.provider || '-') + '</td>' +
-          '<td class="py-2.5 px-3 text-cyan-300 font-sans truncate max-w-[200px]">' + (a.name || a.email || '-') + '</td>' +
-          '<td class="py-2.5 px-3 text-gray-400 uppercase text-[10px]">' + (a.authType || '-') + '</td>' +
-          '<td class="py-2.5 px-3">' +
-            '<button onclick="toggleAccountActive(\\'' + a.id + '\\', ' + !a.isActive + ')" class="px-2.5 py-1 rounded text-[10px] font-bold cursor-pointer transition-all ' +
+        tr.className = 'hover:bg-white/[0.02] transition-colors';
+        tr.innerHTML = '<td class="py-3 px-4 font-semibold text-white">' + (a.provider || '-') + '</td>' +
+          '<td class="py-3 px-4 text-sky-400 font-sans truncate max-w-[200px]">' + (a.name || a.email || '-') + '</td>' +
+          '<td class="py-3 px-4 text-gray-400 uppercase text-[10px]">' + (a.authType || '-') + '</td>' +
+          '<td class="py-3 px-4">' +
+            '<button onclick="switchAccountStatus(\\'' + a.id + '\\', ' + !a.isActive + ')" class="px-2.5 py-1 rounded-md text-[10px] font-bold cursor-pointer transition-all ' +
               (a.isActive ? 'bg-emerald-950 text-emerald-400 border border-emerald-800/60 hover:bg-emerald-900' : 'bg-rose-950 text-rose-400 border border-rose-800/60 hover:bg-rose-900') + '">' +
               (a.isActive ? 'Active (Click to disable)' : 'Disabled (Click to enable)') +
             '</button>' +
           '</td>' +
-          '<td class="py-2.5 px-3 text-gray-400">' + (a.priority || 0) + '</td>' +
-          '<td class="py-2.5 px-3 text-gray-500 text-[10px] truncate max-w-[120px]">' + (a.id || '-') + '</td>';
+          '<td class="py-3 px-4 text-gray-400">' + (a.priority || 0) + '</td>' +
+          '<td class="py-3 px-4 text-gray-500 text-[10px] truncate max-w-[120px]">' + (a.id || '-') + '</td>';
         tbody.appendChild(tr);
       });
     }
 
-    function toggleAccountActive(id, newState) {
+    function switchAccountStatus(id, active) {
       fetch('/api/dashboard/accounts/toggle', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: id, isActive: newState })
+        body: JSON.stringify({ id: id, isActive: active })
       }).then(function(r) { return r.json(); }).then(function(res) {
         if (res.success) {
-          showToast('Account ' + (newState ? 'enabled' : 'disabled') + ' successfully!');
-          loadAccounts();
+          notify('Account ' + (active ? 'activated' : 'disabled') + '!');
+          fetchAccountsData();
         } else {
-          showToast('Failed to update account', true);
+          notify('Failed to update account', true);
         }
-      }).catch(function() { showToast('Network error', true); });
+      }).catch(function() { notify('Network error', true); });
     }
 
-    function filterAccounts() {
-      var q = document.getElementById('inp-search-accounts').value.toLowerCase();
-      var filtered = accountsList.filter(function(a) {
-        return (a.name || '').toLowerCase().indexOf(q) !== -1 ||
-          (a.email || '').toLowerCase().indexOf(q) !== -1 ||
-          (a.provider || '').toLowerCase().indexOf(q) !== -1;
+    function filterAccountsTable() {
+      var query = document.getElementById('inp-filter-acc').value.toLowerCase();
+      var matches = cachedAccountsList.filter(function(a) {
+        return (a.name || '').toLowerCase().indexOf(query) !== -1 ||
+          (a.email || '').toLowerCase().indexOf(query) !== -1 ||
+          (a.provider || '').toLowerCase().indexOf(query) !== -1;
       });
-      renderAccounts(filtered);
+      renderAccountsTable(matches);
     }
 
-    function loadCatalog() {
+    function fetchCatalogData() {
       fetch('/api/dashboard/models').then(function(r) { return r.json(); }).then(function(data) {
-        catalogList = data.models || [];
-        document.getElementById('badge-models').textContent = catalogList.length;
-        renderCatalog(catalogList);
+        cachedCatalogList = data.models || [];
+        document.getElementById('badge-models-count').textContent = cachedCatalogList.length;
+        renderCatalogCards(cachedCatalogList);
 
-        var sel = document.getElementById('sel-pg-model');
+        var sel = document.getElementById('play-sel-model');
         sel.innerHTML = '';
-        catalogList.forEach(function(m) {
+        cachedCatalogList.forEach(function(m) {
           var opt = document.createElement('option');
           opt.value = m.id;
           opt.textContent = m.id + (m.owned_by ? ' (' + m.owned_by + ')' : '');
@@ -53693,119 +53748,119 @@ var dashboard_default = `<!DOCTYPE html>
       }).catch(console.error);
     }
 
-    function renderCatalog(models) {
-      var container = document.getElementById('grid-catalog');
-      container.innerHTML = '';
+    function renderCatalogCards(models) {
+      var shelf = document.getElementById('catalog-cards-shelf');
+      shelf.innerHTML = '';
       models.forEach(function(m) {
         var card = document.createElement('div');
-        card.className = 'p-3.5 rounded-lg bg-bg-alt border border-[#30363d] flex flex-col justify-between';
+        card.className = 'p-4 rounded-xl bg-dark-900 border border-white/5 hover:border-sky-500/30 transition-all flex flex-col justify-between';
         card.innerHTML = '<div>' +
             '<div class="text-xs font-bold text-white font-mono break-all">' + m.id + '</div>' +
-            '<div class="text-[10px] text-cyan-400 mt-1 uppercase font-mono">' + (m.owned_by || '9router') + '</div>' +
+            '<div class="text-[10px] text-sky-400 mt-1 uppercase font-mono">' + (m.owned_by || '9router') + '</div>' +
           '</div>' +
-          '<div class="mt-3 flex items-center justify-between text-[10px] text-gray-400 pt-2 border-t border-[#30363d]">' +
-            '<span>Context: ' + (m.context_length ? fmt(m.context_length) : 'N/A') + '</span>' +
-            '<button onclick="copyText(\\'' + m.id + '\\')" class="text-xs text-gray-400 hover:text-white font-mono">Copy</button>' +
+          '<div class="mt-3 flex items-center justify-between text-[10px] text-gray-400 pt-2 border-t border-white/5 font-mono">' +
+            '<span>Context: ' + (m.context_length ? formatNumber(m.context_length) : 'N/A') + '</span>' +
+            '<button onclick="copyString(\\'' + m.id + '\\')" class="text-xs text-gray-400 hover:text-white">Copy ID</button>' +
           '</div>';
-        container.appendChild(card);
+        shelf.appendChild(card);
       });
     }
 
-    function filterCatalogCards() {
-      var q = document.getElementById('inp-search-catalog').value.toLowerCase();
-      renderCatalog(catalogList.filter(function(m) { return m.id.toLowerCase().indexOf(q) !== -1; }));
+    function filterCatalogDisplay() {
+      var query = document.getElementById('inp-filter-models').value.toLowerCase();
+      renderCatalogCards(cachedCatalogList.filter(function(m) { return m.id.toLowerCase().indexOf(query) !== -1; }));
     }
 
-    function loadCombos() {
+    function fetchCombosData() {
       fetch('/api/dashboard/combos').then(function(r) { return r.json(); }).then(function(combos) {
-        var el = document.getElementById('list-combos');
-        el.innerHTML = '';
+        var shelf = document.getElementById('combos-container');
+        shelf.innerHTML = '';
         if (!combos || !combos.length) {
-          el.innerHTML = '<div class="text-xs text-gray-400 font-mono p-4 bg-bg-alt rounded-lg border border-[#30363d]">No custom combos configured yet. Create one above!</div>';
+          shelf.innerHTML = '<div class="text-xs text-gray-400 font-mono p-4 bg-dark-900 rounded-xl border border-white/5">No custom combos configured yet. Create your first fallback chain above!</div>';
           return;
         }
         combos.forEach(function(c) {
-          var item = document.createElement('div');
-          item.className = 'p-3.5 rounded-lg bg-bg-alt border border-[#30363d] font-mono text-xs flex items-center justify-between';
-          item.innerHTML = '<div>' +
+          var row = document.createElement('div');
+          row.className = 'p-4 rounded-xl bg-dark-900 border border-white/5 font-mono text-xs flex items-center justify-between';
+          row.innerHTML = '<div>' +
               '<div class="font-bold text-white mb-1">' + c.name + '</div>' +
-              '<div class="text-[11px] text-gray-400">Models: ' + (c.models || []).join(' \u2192 ') + '</div>' +
+              '<div class="text-[11px] text-gray-400">Pipeline: ' + (c.models || []).join(' \u2192 ') + '</div>' +
             '</div>' +
-            '<button onclick="removeCombo(\\'' + c.id + '\\')" class="px-2.5 py-1 bg-red-950 hover:bg-red-900 border border-red-800 text-red-300 rounded text-xs font-mono">Delete</button>';
-          el.appendChild(item);
+            '<button onclick="deleteComboItem(\\'' + c.id + '\\')" class="px-2.5 py-1 bg-rose-950 hover:bg-rose-900 border border-rose-800 text-rose-300 rounded text-xs font-mono">Delete</button>';
+          shelf.appendChild(row);
         });
       }).catch(console.error);
     }
 
-    function createNewCombo() {
-      var name = document.getElementById('inp-new-combo-name').value.trim();
-      var rawModels = document.getElementById('inp-new-combo-models').value.trim();
-      if (!name || !rawModels) {
-        showToast('Please enter both name and models', true);
+    function addCombo() {
+      var name = document.getElementById('inp-combo-name').value.trim();
+      var raw = document.getElementById('inp-combo-models').value.trim();
+      if (!name || !raw) {
+        notify('Please enter both combo name and model IDs', true);
         return;
       }
-      var models = rawModels.split(',').map(function(x) { return x.trim(); }).filter(Boolean);
+      var models = raw.split(',').map(function(x) { return x.trim(); }).filter(Boolean);
       fetch('/api/dashboard/combos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: name, models: models })
       }).then(function(r) { return r.json(); }).then(function(res) {
         if (res.success) {
-          showToast('Combo created: ' + name);
-          document.getElementById('inp-new-combo-name').value = '';
-          document.getElementById('inp-new-combo-models').value = '';
-          loadCombos();
+          notify('Combo created: ' + name);
+          document.getElementById('inp-combo-name').value = '';
+          document.getElementById('inp-combo-models').value = '';
+          fetchCombosData();
         } else {
-          showToast('Error: ' + (res.error || 'Failed'), true);
+          notify('Error: ' + (res.error || 'Failed'), true);
         }
-      }).catch(function() { showToast('Network error', true); });
+      }).catch(function() { notify('Network error', true); });
     }
 
-    function removeCombo(id) {
+    function deleteComboItem(id) {
       if (!confirm('Are you sure you want to delete this combo?')) return;
       fetch('/api/dashboard/combos/' + id, { method: 'DELETE' })
         .then(function(r) { return r.json(); }).then(function(res) {
           if (res.success) {
-            showToast('Combo deleted');
-            loadCombos();
+            notify('Combo deleted');
+            fetchCombosData();
           }
         }).catch(console.error);
     }
 
-    function loadTokenSaver() {
+    function fetchTokenSaverData() {
       fetch('/api/dashboard/settings').then(function(r) { return r.json(); }).then(function(settings) {
-        var el = document.getElementById('grid-tokensaver');
-        el.innerHTML = '';
+        var shelf = document.getElementById('tokensaver-grid');
+        shelf.innerHTML = '';
 
-        var features = [
+        var items = [
           { key: "rtkEnabled", title: "RTK Token Saver", desc: "Compresses tool_result content in-place before upstream dispatch", active: !!settings.rtkEnabled },
-          { key: "undici", title: "Undici Keep-Alive", desc: "Persistent TLS connection pool for all upstreams cutting 1-2s TCP handshake", active: true, readonly: true },
-          { key: "antigravityDirect", title: "Antigravity Image Direct", desc: "Direct route preserving image blocks without lossy OpenAI translation", active: true, readonly: true },
-          { key: "domainBreaker", title: "Domain Circuit Breaker", desc: "Bulk-disables dead GSuite domains in <50ms after 2 failures", active: true, readonly: true },
-          { key: "headroomEnabled", title: "Headroom Optimizer", desc: "Context compressor service integration", active: !!settings.headroomEnabled },
-          { key: "toolSanitizer", title: "Tool Args Sanitizer", desc: "Normalizes invalid JSON schema parameters for Claude Code models", active: true, readonly: true }
+          { key: "undici", title: "Undici Keep-Alive Agent Pool", desc: "Persistent TLS connection pool cutting 1-2s TCP handshake per request", active: true, fixed: true },
+          { key: "antigravityDirect", title: "Antigravity Image Direct Route", desc: "Direct route preserving image blocks without lossy OpenAI conversion", active: true, fixed: true },
+          { key: "domainBreaker", title: "Domain Circuit Breaker", desc: "Bulk-disables dead GSuite domains in <50ms after 2 failures", active: true, fixed: true },
+          { key: "headroomEnabled", title: "Headroom Context Compressor", desc: "Automatic prompt compression service integration", active: !!settings.headroomEnabled },
+          { key: "toolSanitizer", title: "Tool Arguments Sanitizer", desc: "Normalizes invalid JSON schemas for Claude Code CLI", active: true, fixed: true }
         ];
 
-        features.forEach(function(f) {
+        items.forEach(function(item) {
           var card = document.createElement('div');
-          card.className = 'p-3.5 rounded-lg bg-bg-alt border border-[#30363d] flex items-start justify-between gap-2';
+          card.className = 'p-4 rounded-xl bg-dark-900 border border-white/5 flex items-start justify-between gap-3';
           card.innerHTML = '<div>' +
-              '<div class="font-bold text-white">' + f.title + '</div>' +
-              '<div class="text-[10px] text-gray-400 mt-1 font-sans">' + f.desc + '</div>' +
+              '<div class="font-bold text-white">' + item.title + '</div>' +
+              '<div class="text-[11px] text-gray-400 mt-1 font-sans">' + item.desc + '</div>' +
             '</div>' +
-            (f.readonly ?
-              '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-950 text-cyan-400 border border-cyan-800/60 font-mono">PERMANENT</span>' :
-              '<button onclick="toggleSetting(\\'' + f.key + '\\', ' + !f.active + ')" class="px-2.5 py-1 rounded text-[10px] font-bold cursor-pointer font-mono ' +
-                (f.active ? 'bg-emerald-950 text-emerald-400 border border-emerald-800/60 hover:bg-emerald-900' : 'bg-gray-800 text-gray-400 hover:bg-gray-700') + '">' +
-                (f.active ? 'ENABLED' : 'DISABLED') +
+            (item.fixed ?
+              '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-950 text-sky-400 border border-sky-800/60 font-mono">PERMANENT</span>' :
+              '<button onclick="toggleSaverOption(\\'' + item.key + '\\', ' + !item.active + ')" class="px-2.5 py-1 rounded text-[10px] font-bold cursor-pointer font-mono ' +
+                (item.active ? 'bg-emerald-950 text-emerald-400 border border-emerald-800/60 hover:bg-emerald-900' : 'bg-dark-800 text-gray-400 hover:bg-dark-700') + '">' +
+                (item.active ? 'ENABLED' : 'DISABLED') +
               '</button>'
             );
-          el.appendChild(card);
+          shelf.appendChild(card);
         });
       }).catch(console.error);
     }
 
-    function toggleSetting(key, val) {
+    function toggleSaverOption(key, val) {
       var payload = {};
       payload[key] = val;
       fetch('/api/dashboard/settings', {
@@ -53814,90 +53869,90 @@ var dashboard_default = `<!DOCTYPE html>
         body: JSON.stringify(payload)
       }).then(function(r) { return r.json(); }).then(function(res) {
         if (res.success) {
-          showToast('Setting updated: ' + key);
-          loadTokenSaver();
+          notify('Option updated: ' + key);
+          fetchTokenSaverData();
         }
       }).catch(console.error);
     }
 
-    function loadEndpoint() {
+    function fetchKeysData() {
       fetch('/api/dashboard/keys').then(function(r) { return r.json(); }).then(function(keys) {
-        var el = document.getElementById('list-keys');
-        el.innerHTML = '';
+        var shelf = document.getElementById('api-keys-container');
+        shelf.innerHTML = '';
         if (!keys || !keys.length) {
-          el.innerHTML = '<div class="text-gray-500 p-3 bg-bg-alt rounded-lg border border-[#30363d]">No API keys registered. Create one above if requireApiKey is enabled.</div>';
+          shelf.innerHTML = '<div class="text-gray-500 p-3 bg-dark-900 rounded-xl border border-white/5">No API keys registered. Requests are accepted locally without key.</div>';
           return;
         }
         keys.forEach(function(k) {
-          var item = document.createElement('div');
-          item.className = 'p-3 rounded-lg bg-bg-alt border border-[#30363d] flex items-center justify-between';
-          item.innerHTML = '<div>' +
+          var row = document.createElement('div');
+          row.className = 'p-3 rounded-xl bg-dark-900 border border-white/5 flex items-center justify-between';
+          row.innerHTML = '<div>' +
               '<div class="text-white font-semibold">' + (k.name || 'API Key') + '</div>' +
               '<div class="text-gray-400 text-[11px]">' + (k.key ? k.key.slice(0, 10) + '...' + k.key.slice(-4) : '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022') + '</div>' +
             '</div>' +
             '<div class="flex items-center gap-2">' +
-              '<button onclick="copyText(\\'' + k.key + '\\')" class="px-2.5 py-1 bg-surface-card hover:bg-surface-hover rounded text-xs text-white">Copy</button>' +
-              '<button onclick="deleteKey(\\'' + k.id + '\\')" class="px-2.5 py-1 bg-red-950 hover:bg-red-900 border border-red-800 text-red-300 rounded text-xs">Delete</button>' +
+              '<button onclick="copyString(\\'' + k.key + '\\')" class="px-2.5 py-1 bg-dark-800 hover:bg-dark-700 rounded text-xs text-white">Copy Key</button>' +
+              '<button onclick="deleteKeyItem(\\'' + k.id + '\\')" class="px-2.5 py-1 bg-rose-950 hover:bg-rose-900 border border-rose-800 text-rose-300 rounded text-xs">Delete</button>' +
             '</div>';
-          el.appendChild(item);
+          shelf.appendChild(row);
         });
       }).catch(console.error);
     }
 
-    function createNewApiKey() {
-      var name = document.getElementById('inp-new-key-name').value.trim();
+    function addApiKey() {
+      var name = document.getElementById('inp-key-name').value.trim();
       fetch('/api/dashboard/keys', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: name || "API Key" })
       }).then(function(r) { return r.json(); }).then(function(res) {
         if (res.success) {
-          showToast('API Key created: ' + res.key.key);
-          document.getElementById('inp-new-key-name').value = '';
-          loadEndpoint();
+          notify('API Key created: ' + res.key.key);
+          document.getElementById('inp-key-name').value = '';
+          fetchKeysData();
         }
       }).catch(console.error);
     }
 
-    function deleteKey(id) {
+    function deleteKeyItem(id) {
       if (!confirm('Are you sure you want to delete this API Key?')) return;
       fetch('/api/dashboard/keys/' + id, { method: 'DELETE' })
         .then(function(r) { return r.json(); }).then(function(res) {
           if (res.success) {
-            showToast('API Key deleted');
-            loadEndpoint();
+            notify('API Key deleted');
+            fetchKeysData();
           }
         }).catch(console.error);
     }
 
-    function loadLogs() {
+    function fetchLogsData() {
       fetch('/api/dashboard/logs?limit=80').then(function(r) { return r.json(); }).then(function(logs) {
-        var tbody = document.getElementById('tbl-logs');
+        var tbody = document.getElementById('logs-tbody');
         tbody.innerHTML = '';
         (logs || []).forEach(function(l) {
           var tr = document.createElement('tr');
-          tr.className = 'hover:bg-surface-card/50';
-          tr.innerHTML = '<td class="py-2 px-3 text-gray-400 text-[10px] whitespace-nowrap">' + (l.timestamp ? new Date(l.timestamp).toLocaleTimeString() : '-') + '</td>' +
-            '<td class="py-2 px-3 font-semibold text-white">' + (l.provider || '-') + '</td>' +
-            '<td class="py-2 px-3 text-cyan-400 truncate max-w-[220px]">' + (l.model || '-') + '</td>' +
-            '<td class="py-2 px-3 text-gray-300">' + fmt(l.promptTokens || 0) + ' / ' + fmt(l.completionTokens || 0) + '</td>' +
-            '<td class="py-2 px-3"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-950 text-emerald-400">' + (l.status || 'OK') + '</span></td>';
+          tr.className = 'hover:bg-white/[0.02]';
+          tr.innerHTML = '<td class="py-3 px-4 text-gray-400 text-[10px] whitespace-nowrap">' + (l.timestamp ? new Date(l.timestamp).toLocaleTimeString() : '-') + '</td>' +
+            '<td class="py-3 px-4 font-semibold text-white">' + (l.provider || '-') + '</td>' +
+            '<td class="py-3 px-4 text-sky-400 truncate max-w-[220px]">' + (l.model || '-') + '</td>' +
+            '<td class="py-3 px-4 text-gray-300">' + formatNumber(l.promptTokens || 0) + ' / ' + formatNumber(l.completionTokens || 0) + '</td>' +
+            '<td class="py-3 px-4"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-950 text-emerald-400">' + (l.status || 'OK') + '</span></td>';
           tbody.appendChild(tr);
         });
       }).catch(console.error);
     }
 
-    function runPlaygroundTest() {
-      var btn = document.getElementById('btn-pg-submit');
-      var lat = document.getElementById('txt-pg-latency');
-      var out = document.getElementById('txt-pg-output');
-      var model = document.getElementById('sel-pg-model').value;
-      var protocol = document.getElementById('sel-pg-proto').value;
-      var system = document.getElementById('txt-pg-system').value;
-      var prompt = document.getElementById('txt-pg-prompt').value;
+    function executePlayTest() {
+      var btn = document.getElementById('play-btn-send');
+      var lat = document.getElementById('play-latency-badge');
+      var out = document.getElementById('play-output-box');
+      var model = document.getElementById('play-sel-model').value;
+      var protocol = document.getElementById('play-sel-proto').value;
+      var system = document.getElementById('play-txt-system').value;
+      var prompt = document.getElementById('play-txt-prompt').value;
 
       btn.disabled = true;
-      lat.textContent = 'Streaming...';
+      lat.textContent = 'Routing...';
       out.textContent = '';
 
       var payload = {};
@@ -53935,30 +53990,34 @@ var dashboard_default = `<!DOCTYPE html>
       });
     }
 
-    function copyText(text) {
+    function copyString(text) {
       navigator.clipboard.writeText(text);
-      showToast('Copied to clipboard: ' + text);
+      notify('Copied to clipboard: ' + text);
     }
 
-    function refreshCurrent() {
-      loadEndpoint();
-      loadAccounts();
-      loadCatalog();
-      loadUsage();
-      showToast('Dashboard reloaded');
+    function manualRefresh() {
+      fetchKeysData();
+      fetchAccountsData();
+      fetchCatalogData();
+      fetchUsageData();
+      notify('Dashboard telemetry refreshed');
     }
 
+    // Auto-detect current port
     if (typeof window !== 'undefined' && window.location.port) {
-      document.getElementById('port-label').textContent = window.location.port;
+      document.getElementById('port-display').textContent = window.location.port;
       var base = window.location.protocol + '//' + window.location.hostname + ':' + window.location.port;
-      document.getElementById('lbl-openai-url').textContent = base + '/v1';
-      document.getElementById('lbl-claude-url').textContent = base + '/v1';
+      document.getElementById('url-openai').textContent = base + '/v1';
+      document.getElementById('url-claude').textContent = base + '/v1';
     }
 
-    loadEndpoint();
-    loadAccounts();
-    loadCatalog();
-    loadUsage();
+    // Route based on URL path on initial load (e.g. /dashboard/usage, /dashboard/providers)
+    var initialPath = window.location.pathname.replace(/^\\/dashboard\\/?/, '');
+    if (initialPath && document.getElementById('panel-' + initialPath)) {
+      route(initialPath);
+    } else {
+      route('endpoint');
+    }
   </script>
 </body>
 </html>
