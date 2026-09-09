@@ -103,9 +103,10 @@ export function registerDashboardRoutes(app) {
   // Models catalog
   app.get("/api/dashboard/models", async (c) => {
     try {
-      const catalog = await buildModelsList(["llm"]);
+      const rawModels = await buildModelsList(["llm"]);
+      const models = Array.isArray(rawModels) ? rawModels : (rawModels?.data || []);
       const aliases = await getModelAliases();
-      return c.json({ models: catalog.data || [], aliases: aliases || {} });
+      return c.json({ models, aliases: aliases || {} });
     } catch (err) {
       return c.json({ error: err.message }, 500);
     }

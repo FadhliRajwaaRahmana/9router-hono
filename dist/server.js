@@ -20184,7 +20184,7 @@ var init_package = __esm({
   "package.json"() {
     package_default = {
       name: "9router-hono",
-      version: "0.2.2",
+      version: "0.2.3",
       description: "Ultra-fast headless Hono proxy engine for 9Router",
       type: "module",
       main: "dist/server.js",
@@ -52755,9 +52755,10 @@ function registerDashboardRoutes(app2) {
   });
   app2.get("/api/dashboard/models", async (c) => {
     try {
-      const catalog = await buildModelsList(["llm"]);
+      const rawModels = await buildModelsList(["llm"]);
+      const models = Array.isArray(rawModels) ? rawModels : rawModels?.data || [];
       const aliases = await getModelAliases();
-      return c.json({ models: catalog.data || [], aliases: aliases || {} });
+      return c.json({ models, aliases: aliases || {} });
     } catch (err) {
       return c.json({ error: err.message }, 500);
     }
@@ -53836,8 +53837,9 @@ app.get("/", (c) => {
 app.get("/health", (c) => c.text("OK"));
 app.get("/v1/models", async (c) => {
   try {
-    const list = await buildModelsList(["llm"]);
-    return c.json(list);
+    const rawModels = await buildModelsList(["llm"]);
+    const data = Array.isArray(rawModels) ? rawModels : rawModels?.data || [];
+    return c.json({ object: "list", data });
   } catch (err) {
     return c.json({ error: { message: err.message || "Failed to build models list" } }, 500);
   }
@@ -53845,8 +53847,9 @@ app.get("/v1/models", async (c) => {
 app.get("/v1/models/:kind", async (c) => {
   const kind = c.req.param("kind");
   try {
-    const list = await buildModelsList([kind]);
-    return c.json(list);
+    const rawModels = await buildModelsList([kind]);
+    const data = Array.isArray(rawModels) ? rawModels : rawModels?.data || [];
+    return c.json({ object: "list", data });
   } catch (err) {
     return c.json({ error: { message: err.message || "Failed to build models list" } }, 500);
   }

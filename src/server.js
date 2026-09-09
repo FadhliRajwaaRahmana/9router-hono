@@ -85,8 +85,9 @@ app.get("/health", (c) => c.text("OK"));
 // Models endpoints
 app.get("/v1/models", async (c) => {
   try {
-    const list = await buildModelsList(["llm"]);
-    return c.json(list);
+    const rawModels = await buildModelsList(["llm"]);
+    const data = Array.isArray(rawModels) ? rawModels : (rawModels?.data || []);
+    return c.json({ object: "list", data });
   } catch (err) {
     return c.json({ error: { message: err.message || "Failed to build models list" } }, 500);
   }
@@ -95,8 +96,9 @@ app.get("/v1/models", async (c) => {
 app.get("/v1/models/:kind", async (c) => {
   const kind = c.req.param("kind");
   try {
-    const list = await buildModelsList([kind]);
-    return c.json(list);
+    const rawModels = await buildModelsList([kind]);
+    const data = Array.isArray(rawModels) ? rawModels : (rawModels?.data || []);
+    return c.json({ object: "list", data });
   } catch (err) {
     return c.json({ error: { message: err.message || "Failed to build models list" } }, 500);
   }
